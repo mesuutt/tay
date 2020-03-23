@@ -1,5 +1,5 @@
 use std::fmt;
-use std::fmt::{Formatter, Error};
+use std::fmt::{Formatter};
 
 pub type IntegerSize = i64;
 

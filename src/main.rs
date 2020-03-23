@@ -1,5 +1,9 @@
 pub mod token;
+pub mod lexer;
+pub mod parser;
+pub mod ast;
+pub mod repl;
 
 fn main() {
-    println!("{:?}", token::Token::Identifier(String::from("asdasd")));
+    repl::start();
 }
