@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::{Formatter, Error};
 
 pub type IntegerSize = i64;
 
@@ -8,6 +9,7 @@ pub enum Token {
     EndOfFile,
     Ident(String),
     Int(IntegerSize),
+
     Assign,
     Plus,
 
@@ -27,6 +29,34 @@ pub enum Token {
     Return,
 }
 
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Token::Illegal(c) => write!(f, "Illegal({})", c),
+            Token::EndOfFile => write!(f, "EOF",),
+
+            Token::Ident(s) => write!(f, "Identifier({})", s),
+            Token::Int(i) => i.fmt(f),
+            Token::Boolean(b) => write!(f, "Boolean({})", b),
+
+            Token::Assign => write!(f, "="),
+            Token::Plus => write!(f, "+"),
+
+            Token::Comma => write!(f, ","),
+            Token::Semicolon => write!(f, ";"),
+            Token::LParen => write!(f, "("),
+            Token::RParen => write!(f, ")"),
+            Token::LBrace => write!(f, "{{"),
+            Token::RBrace => write!(f, "}}"),
+
+            Token::Function => write!(f, "fn"),
+            Token::Let => write!(f, "let"),
+            Token::Return => write!(f, "return"),
+            Token::If => write!(f, "if"),
+            Token::Else => write!(f, "else"),
+        }
+    }
+}
 
 pub fn lookup_ident(literal: String) -> Token {
     match literal.as_str() {
