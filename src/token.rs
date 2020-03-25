@@ -3,7 +3,7 @@ use std::fmt::{Formatter};
 
 pub type IntegerSize = i64;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Token {
     Illegal(char),
     EndOfFile,
