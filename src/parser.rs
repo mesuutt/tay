@@ -280,7 +280,7 @@ mod test {
                 )
             ),
         ];
-        println!("ss: {}", std::mem::size_of::<Ident>());
+
         assert_eq!(prog, expected);
     }
 }
