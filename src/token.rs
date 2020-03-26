@@ -14,6 +14,8 @@ pub enum Token {
     Plus,
     Minus,
     Bang,
+    Asterisk,
+    Slash,
 
     Comma,
     Semicolon,
@@ -45,6 +47,8 @@ impl fmt::Display for Token {
             Token::Plus => write!(f, "+"),
             Token::Minus => write!(f, "-"),
             Token::Bang => write!(f, "!"),
+            Token::Asterisk => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
 
             Token::Comma => write!(f, ","),
             Token::Semicolon => write!(f, ";"),

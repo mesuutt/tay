@@ -47,6 +47,7 @@ pub enum Expression {
     Ident(Ident),
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
+    Infix(Infix, Box<Expression>, Box<Expression>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -64,7 +65,10 @@ pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
 
 
+#[derive(PartialOrd, PartialEq)]
 pub enum Precedence {
     Lowest,
-    Prefix,
+    Sum,  // +
+    Product, // *
+    Prefix, // -X, !X
 }

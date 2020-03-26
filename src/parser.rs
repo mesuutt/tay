@@ -1,6 +1,7 @@
 use crate::token::Token;
 use crate::lexer::Lexer;
-use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix};
+use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix};
+use std::process::exit;
 
 
 struct Parser<'a> {
@@ -54,6 +55,22 @@ impl<'a> Parser<'a> {
 
     pub fn get_errors(&self) -> Vec<String> {
         return self.errors.clone();
+    }
+
+    fn token_to_precedence(&self, token: &Token) -> Precedence {
+        match token {
+            Token::Plus | Token::Minus => Precedence::Sum,
+            Token::Asterisk | Token::Slash => Precedence::Product,
+            _ => Precedence::Lowest
+        }
+    }
+
+    fn current_precedence(&self) -> Precedence {
+        self.token_to_precedence(&self.current_token)
+    }
+
+    fn peek_precedence(&self) -> Precedence {
+        self.token_to_precedence(&self.peek_token)
     }
 
     pub fn parse(&mut self) -> Program {
@@ -118,12 +135,26 @@ impl<'a> Parser<'a> {
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
         // we don't have infix/prefix functions, instead calling related fn with pattern matching
-        match self.current_token {
+        let mut left = match self.current_token {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
             Token::Minus | Token::Plus | Token::Bang => self.parse_prefix_expr(),
             _ => return None
+        };
+
+        while !self.peek_token_is(Token::Semicolon) && precedence < self.peek_precedence() {
+            match self.peek_token {
+                Token::Slash
+                | Token::Plus
+                | Token::Asterisk
+                | Token::Minus => {
+                    self.next_token();
+                    left = self.parse_infix_expr(left.unwrap())
+                }
+                _ => return left
+            }
         }
+        left
     }
 
     fn parse_ident(&mut self) -> Option<Ident> {
@@ -143,7 +174,7 @@ impl<'a> Parser<'a> {
     fn parse_ident_expr(&mut self) -> Option<Expression> {
         match self.parse_ident() {
             Some(ident) => Some(Expression::Ident(ident.clone())),
-            _ => None
+            None => None
         }
     }
 
@@ -156,9 +187,27 @@ impl<'a> Parser<'a> {
 
         self.next_token();
 
-         match self.parse_expression(Precedence::Prefix) {
-            Some(expr) => Some(Expression::Prefix(prefix, Box::new(right_expr))),
-            _ => None
+        match self.parse_expression(Precedence::Prefix) {
+            Some(expr) => Some(Expression::Prefix(prefix, Box::new(expr))),
+            None => None
+        }
+    }
+
+    fn parse_infix_expr(&mut self, left: Expression) -> Option<Expression> {
+        let infix = match self.current_token {
+            Token::Plus => Infix::Plus,
+            Token::Minus => Infix::Minus,
+            Token::Asterisk => Infix::Mul,
+            Token::Slash => Infix::Div,
+            _ => return None,
+        };
+
+        let precedence = self.current_precedence();
+        self.next_token();
+
+        match self.parse_expression(precedence) {
+            Some(expr) => Some(Expression::Infix(infix, Box::new(left), Box::new(expr))),
+            None => None
         }
     }
 }
@@ -168,7 +217,7 @@ impl<'a> Parser<'a> {
 mod test {
     use crate::lexer::Lexer;
     use super::Parser;
-    use crate::ast::{Statement, Ident, Literal, Expression, Prefix};
+    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
 
     #[test]
     fn let_statement() {
@@ -218,4 +267,20 @@ mod test {
         assert_eq!(prog, expected);
     }
 
+    #[test]
+    fn infix_expr() {
+        let mut p = Parser::new(Lexer::new("5+15;"));
+        let prog = p.parse();
+        let expected = vec![
+            Statement::Expression(
+                Expression::Infix(
+                    Infix::Plus,
+                    Box::new(Expression::Literal(Literal::Int(5))),
+                    Box::new(Expression::Literal(Literal::Int(15))),
+                )
+            ),
+        ];
+        println!("ss: {}", std::mem::size_of::<Ident>());
+        assert_eq!(prog, expected);
+    }
 }
