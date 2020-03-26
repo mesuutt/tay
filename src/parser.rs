@@ -1,6 +1,6 @@
 use crate::token::Token;
 use crate::lexer::Lexer;
-use crate::ast::{self, Program, Statement, Ident, Precedence, Expression};
+use crate::ast::{self, Program, Statement, Ident, Precedence, Expression, Literal};
 
 
 struct Parser<'a> {
@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn get_errors(&self) -> Vec<String> {
-        return self.errors.clone()
+        return self.errors.clone();
     }
 
     pub fn parse(&mut self) -> Program {
@@ -71,7 +71,7 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.current_token {
             Token::Let => self.parse_let_statement(),
-            _ => None
+            _ => self.parse_expression_statement()
         }
     }
 
@@ -82,12 +82,12 @@ impl<'a> Parser<'a> {
             _ => return None,
         };
 
-        /*let ident = match self.parse_ident() {
-            Some(name) => name,
+        let ident = match self.parse_ident() {
+            Some(ident) => ident,
             _ => return None
-        };*/
+        };
 
-        let ident = Ident(String::from(self.current_token.to_string()));
+        // let ident = Ident(String::from(self.current_token.to_string()));
 
         if !self.expect_peek(Token::Assign) {
             return None;
@@ -95,16 +95,56 @@ impl<'a> Parser<'a> {
 
         self.next_token();
 
-        /*let expr = match self.parse_expression(ast::Precedence::Lowest) {
+        let expr = match self.parse_expression(Precedence::Lowest) {
             Some(expr) => expr,
             _ => return None,
-        };*/
+        };
 
-        let expr = Expression::Ident(Ident(String::from(self.current_token.to_string())));
+        // let expr = Expression::Ident(Ident(String::from(self.current_token.to_string())));
         Some(Statement::Let(ident, expr))
     }
 
-    fn parse_expression(precedence: Precedence) {}
+    fn parse_expression_statement(&mut self) -> Option<Statement> {
+        match self.parse_expression(Precedence::Lowest) {
+            Some(expr) => {
+                if self.peek_token_is(Token::Semicolon) {
+                    self.next_token();
+                }
+                Some(Statement::Expression(expr))
+            }
+            _ => None
+        }
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
+        // we don't have infix/prefix functions, instead calling related fn with pattern matching
+        match self.current_token {
+            Token::Ident(_) => self.parse_ident_expr(),
+            Token::Int(_) => self.parse_integer_literal(),
+            _ => return None
+        }
+    }
+
+    fn parse_ident(&mut self) -> Option<Ident> {
+        match self.current_token {
+            Token::Ident(ref mut ident_str) => Some(Ident(ident_str.clone())),
+            _ => None
+        }
+    }
+
+    fn parse_integer_literal(&mut self) -> Option<Expression> {
+        match self.current_token {
+            Token::Int(num) => Some(Expression::Literal(Literal::Int(num.clone()))),
+            _ => None
+        }
+    }
+
+    fn parse_ident_expr(&mut self) -> Option<Expression> {
+        match self.parse_ident() {
+            Some(ident) => Some(Expression::Ident(ident.clone())),
+            _ => None
+        }
+    }
 }
 
 
@@ -112,7 +152,7 @@ impl<'a> Parser<'a> {
 mod test {
     use crate::lexer::Lexer;
     use super::Parser;
-    use crate::ast::{Statement, Expression, Ident};
+    use crate::ast::{Statement, Ident, Literal, Expression};
 
     #[test]
     fn let_statement() {
@@ -122,13 +162,33 @@ mod test {
 
         let mut p = Parser::new(Lexer::new(input));
         let prog = p.parse();
-        let expected = vec!["Identifier(x)", "Identifier(y)"];
         assert_eq!(prog.len(), 2);
+        assert_eq!(p.get_errors().len(), 0);
 
-        for (i, s) in prog.iter().enumerate() {
-            if let Statement::Let(Ident(var_name), _) = s {
-                assert_eq!(*var_name, expected[i]);
-            }
-        }
+        assert_eq!(prog, vec![
+            Statement::Let(Ident(String::from("x")), Expression::Literal(Literal::Int(5))),
+            Statement::Let(Ident(String::from("y")), Expression::Literal(Literal::Int(10))),
+        ]);
+    }
+
+    #[test]
+    fn parser_errors() {
+        let invalid_input = "let x 5;";
+        let mut p = Parser::new(Lexer::new(invalid_input));
+        let prog = p.parse();
+        assert_eq!(p.get_errors().len(), 1);
+        assert_eq!(prog.len(), 0);
+    }
+
+    #[test]
+    fn parser_integer_literal_expr() {
+        let invalid_input = "5;6;";
+        let mut p = Parser::new(Lexer::new(invalid_input));
+        let prog = p.parse();
+        let expected = vec![
+            Statement::Expression(Expression::Literal(Literal::Int(5))),
+            Statement::Expression(Expression::Literal(Literal::Int(6))),
+        ];
+        assert_eq!(prog, expected);
     }
 }
