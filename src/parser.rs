@@ -1,7 +1,6 @@
 use crate::token::Token;
 use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix};
-use std::process::exit;
 
 
 struct Parser<'a> {
