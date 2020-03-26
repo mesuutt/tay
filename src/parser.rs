@@ -1,6 +1,6 @@
 use crate::token::Token;
 use crate::lexer::Lexer;
-use crate::ast::{self, Program, Statement, Ident, Precedence, Expression, Literal};
+use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix};
 
 
 struct Parser<'a> {
@@ -121,6 +121,7 @@ impl<'a> Parser<'a> {
         match self.current_token {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
+            Token::Minus | Token::Plus | Token::Bang => self.parse_prefix_expr(),
             _ => return None
         }
     }
@@ -145,6 +146,21 @@ impl<'a> Parser<'a> {
             _ => None
         }
     }
+
+    fn parse_prefix_expr(&mut self) -> Option<Expression> {
+        let prefix = match self.current_token {
+            Token::Bang => Prefix::Bang,
+            Token::Minus => Prefix::Minus,
+            _ => return None
+        };
+
+        self.next_token();
+
+         match self.parse_expression(Precedence::Prefix) {
+            Some(expr) => Some(Expression::Prefix(prefix, Box::new(right_expr))),
+            _ => None
+        }
+    }
 }
 
 
@@ -152,7 +168,7 @@ impl<'a> Parser<'a> {
 mod test {
     use crate::lexer::Lexer;
     use super::Parser;
-    use crate::ast::{Statement, Ident, Literal, Expression};
+    use crate::ast::{Statement, Ident, Literal, Expression, Prefix};
 
     #[test]
     fn let_statement() {
@@ -181,9 +197,8 @@ mod test {
     }
 
     #[test]
-    fn parser_integer_literal_expr() {
-        let invalid_input = "5;6;";
-        let mut p = Parser::new(Lexer::new(invalid_input));
+    fn integer_literal_expr() {
+        let mut p = Parser::new(Lexer::new("5;6;"));
         let prog = p.parse();
         let expected = vec![
             Statement::Expression(Expression::Literal(Literal::Int(5))),
@@ -191,4 +206,16 @@ mod test {
         ];
         assert_eq!(prog, expected);
     }
+
+    #[test]
+    fn prefix_expr() {
+        let mut p = Parser::new(Lexer::new("!5;-15;"));
+        let prog = p.parse();
+        let expected = vec![
+            Statement::Expression(Expression::Prefix(Prefix::Bang, Box::new(Expression::Literal(Literal::Int(5))))),
+            Statement::Expression(Expression::Prefix(Prefix::Minus, Box::new(Expression::Literal(Literal::Int(15))))),
+        ];
+        assert_eq!(prog, expected);
+    }
+
 }

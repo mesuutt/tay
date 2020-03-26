@@ -12,6 +12,8 @@ pub enum Token {
 
     Assign,
     Plus,
+    Minus,
+    Bang,
 
     Comma,
     Semicolon,
@@ -41,6 +43,8 @@ impl fmt::Display for Token {
 
             Token::Assign => write!(f, "="),
             Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Bang => write!(f, "!"),
 
             Token::Comma => write!(f, ","),
             Token::Semicolon => write!(f, ";"),

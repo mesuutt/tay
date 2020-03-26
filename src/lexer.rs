@@ -36,6 +36,8 @@ impl<'a> Lexer<'a> {
         self.skip_whitespace();
 
         match self.ch {
+            '-' => token = Token::Minus,
+            '!' => token = Token::Bang,
             '=' => token = Token::Assign,
             ';' => token = Token::Semicolon,
             '(' => token = Token::LParen,
