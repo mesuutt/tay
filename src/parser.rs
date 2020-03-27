@@ -268,15 +268,21 @@ mod test {
 
     #[test]
     fn infix_expr() {
-        let mut p = Parser::new(Lexer::new("5+15;"));
+        let mut p = Parser::new(Lexer::new("5+15*18;"));
         let prog = p.parse();
+        assert_eq!(0, p.errors.len());
+
         let expected = vec![
             Statement::Expression(
                 Expression::Infix(
                     Infix::Plus,
                     Box::new(Expression::Literal(Literal::Int(5))),
-                    Box::new(Expression::Literal(Literal::Int(15))),
-                )
+                    Box::new(Expression::Infix(
+                        Infix::Mul,
+                        Box::new(Expression::Literal(Literal::Int(15))),
+                        Box::new(Expression::Literal(Literal::Int(18)))
+                    )),
+                ),
             ),
         ];
 

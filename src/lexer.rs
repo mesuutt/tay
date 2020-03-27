@@ -39,6 +39,8 @@ impl<'a> Lexer<'a> {
             '-' => token = Token::Minus,
             '!' => token = Token::Bang,
             '=' => token = Token::Assign,
+            '*' => token = Token::Asterisk,
+            '/' => token = Token::Slash,
             ';' => token = Token::Semicolon,
             '(' => token = Token::LParen,
             ')' => token = Token::RParen,
