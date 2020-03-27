@@ -3,7 +3,7 @@ use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix};
 
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     lexer: Lexer<'a>,
     current_token: Token,
     peek_token: Token,
