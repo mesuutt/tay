@@ -51,10 +51,40 @@ pub enum Expression {
     Infix(Infix, Box<Expression>, Box<Expression>),
 }
 
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.borrow() {
+            Expression::Ident(ident) => {
+                write!(f, "{}", ident.0)
+            },
+            Expression::Literal(literal) => {
+                write!(f, "{}", literal)
+            },
+            Expression::Prefix(prefix,expr) => {
+                write!(f, "{}{}", prefix, expr)
+            },
+            Expression::Infix(infix,left, right) => {
+                write!(f, "{} {} {}", left, infix, right)
+            },
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(Ident, Expression),
     Expression(Expression), // x + 10;
+}
+
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.borrow() {
+            Statement::Let(ident, expr) => {
+                write!(f, "let {} = {}", ident.0, expr)
+            },
+            Statement::Expression(expr) => write!(f, "{}", expr)
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -62,8 +92,30 @@ pub enum Literal {
     Int(i64),
 }
 
+
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.borrow() {
+            Literal::Int(int) => write!(f, "{}", int),
+        }
+    }
+}
+
+
 pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
+
+/*
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut buf = String::new();
+        self.iter().map(|s| {
+            buf.push_str(format!("{}", s).as_str());
+        })
+        write!(f, "{}", buf);
+    }
+}
+*/
 
 
 #[derive(PartialOrd, PartialEq)]
