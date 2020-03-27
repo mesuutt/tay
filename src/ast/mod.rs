@@ -1,5 +1,4 @@
 use std::fmt;
-use std::borrow::Borrow;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ident(pub String);
@@ -14,7 +13,7 @@ pub enum Prefix {
 
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.borrow() {
+        match self {
             Prefix::Plus => write!(f, "+"),
             Prefix::Minus => write!(f, "-"),
             Prefix::Bang => write!(f, "!"),
@@ -33,7 +32,7 @@ pub enum Infix {
 
 impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.borrow() {
+        match self {
             Infix::Plus => write!(f, "+"),
             Infix::Minus => write!(f, "-"),
             Infix::Mul => write!(f, "*"),
@@ -53,7 +52,7 @@ pub enum Expression {
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.borrow() {
+        match self {
             Expression::Ident(ident) => {
                 write!(f, "{}", ident.0)
             },
@@ -78,7 +77,7 @@ pub enum Statement {
 
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.borrow() {
+        match self {
             Statement::Let(ident, expr) => {
                 write!(f, "let {} = {}", ident.0, expr)
             },
@@ -95,7 +94,7 @@ pub enum Literal {
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.borrow() {
+        match self {
             Literal::Int(int) => write!(f, "{}", int),
         }
     }
