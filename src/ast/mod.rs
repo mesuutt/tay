@@ -1,4 +1,5 @@
 use std::fmt;
+use std::borrow::Borrow;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ident(pub String);
@@ -13,7 +14,7 @@ pub enum Prefix {
 
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self.borrow() {
             Prefix::Plus => write!(f, "+"),
             Prefix::Minus => write!(f, "-"),
             Prefix::Bang => write!(f, "!"),
@@ -32,7 +33,7 @@ pub enum Infix {
 
 impl fmt::Display for Infix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self.borrow() {
             Infix::Plus => write!(f, "+"),
             Infix::Minus => write!(f, "-"),
             Infix::Mul => write!(f, "*"),
