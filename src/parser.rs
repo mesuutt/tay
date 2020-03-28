@@ -103,8 +103,6 @@ impl<'a> Parser<'a> {
             _ => return None
         };
 
-        // let ident = Ident(String::from(self.current_token.to_string()));
-
         if !self.expect_peek(Token::Assign) {
             return None;
         }
@@ -116,7 +114,6 @@ impl<'a> Parser<'a> {
             _ => return None,
         };
 
-        // let expr = Expression::Ident(Ident(String::from(self.current_token.to_string())));
         Some(Statement::Let(ident, expr))
     }
 
@@ -217,7 +214,7 @@ mod test {
     use crate::lexer::Lexer;
     use super::Parser;
     use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
-    
+
     #[test]
     fn let_statement() {
         let input = r#"
