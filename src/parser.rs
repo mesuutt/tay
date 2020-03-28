@@ -217,7 +217,7 @@ mod test {
     use crate::lexer::Lexer;
     use super::Parser;
     use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
-
+    
     #[test]
     fn let_statement() {
         let input = r#"
@@ -280,12 +280,32 @@ mod test {
                     Box::new(Expression::Infix(
                         Infix::Mul,
                         Box::new(Expression::Literal(Literal::Int(15))),
-                        Box::new(Expression::Literal(Literal::Int(18)))
+                        Box::new(Expression::Literal(Literal::Int(18))),
                     )),
                 ),
             ),
         ];
 
         assert_eq!(prog, expected);
+    }
+
+    #[test]
+    fn operator_precedence() {
+        let data = vec![
+            ("-a * b", "((-a) * b)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b - c", "((a + b) - c)"),
+            ("a * b * c", "((a * b) * c)"),
+            ("a * b / c", "((a * b) / c)"),
+            ("a + b / c", "(a + (b / c))"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+        ];
+
+        for &(input, expected) in data.iter() {
+            let mut p = Parser::new(Lexer::new(input));
+            let prog = p.parse();
+            assert_eq!(format!("{}", prog.first().unwrap()), expected);
+        }
     }
 }
