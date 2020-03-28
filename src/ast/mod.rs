@@ -55,16 +55,16 @@ impl fmt::Display for Expression {
         match self {
             Expression::Ident(ident) => {
                 write!(f, "{}", ident.0)
-            },
+            }
             Expression::Literal(literal) => {
                 write!(f, "{}", literal)
-            },
-            Expression::Prefix(prefix,expr) => {
-                write!(f, "{}{}", prefix, expr)
-            },
-            Expression::Infix(infix,left, right) => {
-                write!(f, "{} {} {}", left, infix, right)
-            },
+            }
+            Expression::Prefix(prefix, expr) => {
+                write!(f, "({}{})", prefix, expr)
+            }
+            Expression::Infix(infix, left, right) => {
+                write!(f, "({} {} {})", left, infix, right)
+            }
         }
     }
 }
@@ -79,8 +79,8 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Statement::Let(ident, expr) => {
-                write!(f, "let {} = {}", ident.0, expr)
-            },
+                write!(f, "let {} = {};", ident.0, expr)
+            }
             Statement::Expression(expr) => write!(f, "{}", expr)
         }
     }
@@ -103,18 +103,6 @@ impl fmt::Display for Literal {
 
 pub type BlockStatement = Vec<Statement>;
 pub type Program = BlockStatement;
-
-/*
-impl fmt::Display for Program {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut buf = String::new();
-        self.iter().map(|s| {
-            buf.push_str(format!("{}", s).as_str());
-        })
-        write!(f, "{}", buf);
-    }
-}
-*/
 
 
 #[derive(PartialOrd, PartialEq)]
