@@ -6,6 +6,7 @@ pub struct Lexer<'a> {
     input: &'a str,
     position: usize,
     read_position: usize,
+    input_len: usize,
     ch: char,
 }
 
@@ -15,6 +16,7 @@ impl<'a> Lexer<'a> {
             input,
             position: 0,
             read_position: 0,
+            input_len: input.len(),
             ch: '0',
         };
         lexer.read_char(); // initialize l.ch, l.position and l.read_position
@@ -22,7 +24,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_char(&mut self) {
-        if self.read_position >= self.input.len() {
+        if self.read_position >= self.input_len {
             self.ch = '0';
         } else if let Some(ch) = self.input.chars().nth(self.read_position) {
             self.ch = ch;
@@ -32,6 +34,11 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn next_token(&mut self) -> Token {
+        // if this fn called after already EOF, do not continue anymore.
+        if self.position == self.input_len {
+            return Token::EndOfFile
+        }
+
         let token: Token;
         self.skip_whitespace();
 
@@ -48,7 +55,7 @@ impl<'a> Lexer<'a> {
             '+' => token = Token::Plus,
             '{' => token = Token::LBrace,
             '}' => token = Token::RBrace,
-            '0' => token = Token::EndOfFile,
+            // '0' => token = Token::EndOfFile,
             _ => {
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();
@@ -58,7 +65,13 @@ impl<'a> Lexer<'a> {
                         let literal = self.read_number();
                         match literal.parse::<IntegerSize>() {
                             Ok(i) => return Token::Int(i),
-                            Err(_) => panic!("integer literal parse error")
+                            Err(_) => {
+                                if literal.as_bytes().is_empty() {
+                                    return Token::EndOfFile;
+                                } else {
+                                    panic!("integer literal parse error")
+                                }
+                            }
                         }
                     } else {
                         token = Token::Illegal(self.ch)
@@ -83,6 +96,9 @@ impl<'a> Lexer<'a> {
         let pos = self.position;
         while self.ch.is_ascii_alphanumeric() {
             self.read_char();
+            if self.read_position > self.input_len {
+                break;
+            }
         }
 
         self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
@@ -157,6 +173,20 @@ let result = add(five, ten);";
             Token::Ident(String::from("ten")),
             Token::RParen,
             Token::Semicolon,
+        ];
+
+        let mut lex = Lexer::new(input);
+        for i in expected {
+            let t = lex.next_token();
+            assert_eq!(t, i);
+        }
+    }
+
+    #[test]
+    fn end_of_file() {
+        let input = "";
+        let expected = vec![
+            Token::EndOfFile
         ];
 
         let mut lex = Lexer::new(input);
