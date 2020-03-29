@@ -48,6 +48,10 @@ pub enum Expression {
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
+    Call {
+        func: Box<Expression>,
+        args: Vec<Expression>,
+    }
 }
 
 impl fmt::Display for Expression {
@@ -64,6 +68,10 @@ impl fmt::Display for Expression {
             }
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
+            },
+            Expression::Call {func  , args} => {
+                let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
+                write!(f, "({})", arg_list.join(", "))
             }
         }
     }
@@ -111,4 +119,5 @@ pub enum Precedence {
     Sum,  // +
     Product, // *
     Prefix, // -X, !X
+    Call, // myFunc(x), LParen
 }

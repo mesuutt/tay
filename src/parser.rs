@@ -60,6 +60,7 @@ impl<'a> Parser<'a> {
         match token {
             Token::Plus | Token::Minus => Precedence::Sum,
             Token::Asterisk | Token::Slash => Precedence::Product,
+            Token::LParen => Precedence::Call,
             _ => Precedence::Lowest
         }
     }
@@ -135,6 +136,7 @@ impl<'a> Parser<'a> {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
             Token::Minus | Token::Plus | Token::Bang => self.parse_prefix_expr(),
+            Token::LParen => self.parse_grouped_expr(),
             _ => return None
         };
 
@@ -147,6 +149,11 @@ impl<'a> Parser<'a> {
                     self.next_token();
                     left = self.parse_infix_expr(left.unwrap())
                 }
+                Token::LParen => {
+                    self.next_token();
+                    left = self.parse_call_expr(left.unwrap())
+                }
+
                 _ => return left
             }
         }
@@ -204,6 +211,57 @@ impl<'a> Parser<'a> {
         match self.parse_expression(precedence) {
             Some(expr) => Some(Expression::Infix(infix, Box::new(left), Box::new(expr))),
             None => None
+        }
+    }
+
+    fn parse_call_args(&mut self) -> Option<Vec<Expression>> {
+        let mut args: Vec<Expression> = vec![];
+        if self.peek_token_is(Token::RParen) {
+            self.next_token();
+            return Some(args);
+        }
+
+        self.next_token();
+
+        match self.parse_expression(Precedence::Lowest) {
+            Some(expr) => args.push(expr),
+            None => return None
+        }
+
+        while self.expect_peek(Token::Comma) {  // Used expect_peek instead peek_token_is
+            self.next_token();
+            match self.parse_expression(Precedence::Lowest) {
+                Some(expr) => args.push(expr),
+                None => return None
+            }
+        }
+        if !self.peek_token_is(Token::RParen) {
+            None
+        } else {
+            Some(args)
+        }
+    }
+
+    fn parse_call_expr(&mut self, func: Expression) -> Option<Expression> {
+        let args = match self.parse_call_args() {
+            Some(args) => args,
+            None => return None
+        };
+
+        Some(Expression::Call {
+            func: Box::new(func),
+            args,
+        })
+    }
+
+    fn parse_grouped_expr(&mut self) -> Option<Expression> {
+        self.next_token();
+
+        let expr = self.parse_expression(Precedence::Lowest);
+        if !self.expect_peek(Token::RParen) {
+            None
+        } else {
+            expr
         }
     }
 }
@@ -297,11 +355,15 @@ mod test {
             ("a * b / c", "((a * b) / c)"),
             ("a + b / c", "(a + (b / c))"),
             ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+            ("(5 + 5) * 2", "((5 + 5) * 2)"),
+
         ];
 
         for &(input, expected) in data.iter() {
             let mut p = Parser::new(Lexer::new(input));
             let prog = p.parse();
+            assert_eq!(p.errors.len(), 0);
             assert_eq!(format!("{}", prog.first().unwrap()), expected);
         }
     }
