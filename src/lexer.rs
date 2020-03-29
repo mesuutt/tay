@@ -173,6 +173,7 @@ let result = add(five, ten);";
             Token::Ident(String::from("ten")),
             Token::RParen,
             Token::Semicolon,
+            Token::EndOfFile,
         ];
 
         let mut lex = Lexer::new(input);
@@ -184,8 +185,11 @@ let result = add(five, ten);";
 
     #[test]
     fn end_of_file() {
-        let input = "";
+        let input = "a+b";
         let expected = vec![
+            Token::Ident(String::from("a")),
+            Token::Plus,
+            Token::Ident(String::from("b")),
             Token::EndOfFile
         ];
 
