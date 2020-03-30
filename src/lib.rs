@@ -1,5 +1,6 @@
-pub mod token;
-pub mod lexer;
-pub mod ast;
-pub mod parser;
-pub mod repl;
+mod token;
+mod lexer;
+mod ast;
+mod parser;
+mod evaluator;
+mod repl;
