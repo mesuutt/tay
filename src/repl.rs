@@ -24,9 +24,12 @@ pub fn start() {
                     continue
                 }
 
-                for x in prog.iter() {
-                    println!("{}", x);
+                let evaluator = Evaluator::new(Env::new());
+                match evaluator.eval(prog) {
+                    Some(obj) => println!("{}", obj),
+                    None => continue
                 }
+
             }
             Err(_) => panic!("read from STDIN failed")
         }
