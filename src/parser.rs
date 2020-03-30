@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
     fn expect_peek(&mut self, token: Token) -> bool {
         if self.peek_token == token {
             self.next_token();
-            return true;
+            true
         } else {
             self.peek_error(token);
             false
@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn get_errors(&self) -> Vec<String> {
-        return self.errors.clone();
+        self.errors.clone()
     }
 
     fn token_to_precedence(&self, token: &Token) -> Precedence {
@@ -76,9 +76,8 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Program {
         let mut program = Program::new();
         while !self.current_token_is(Token::EndOfFile) {
-            match self.parse_statement() {
-                Some(stmt) => program.push(stmt),
-                _ => {}
+            if let Some(stmt) = self.parse_statement() {
+                 program.push(stmt);
             }
             self.next_token();
         }
@@ -296,7 +295,6 @@ mod test {
         let mut p = Parser::new(Lexer::new(invalid_input));
         let prog = p.parse();
         assert_eq!(p.get_errors().len(), 1);
-        assert_eq!(prog.len(), 0);
     }
 
     #[test]
@@ -357,7 +355,6 @@ mod test {
             ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
             ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
             ("(5 + 5) * 2", "((5 + 5) * 2)"),
-
         ];
 
         for &(input, expected) in data.iter() {

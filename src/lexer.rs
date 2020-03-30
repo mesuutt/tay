@@ -36,7 +36,7 @@ impl<'a> Lexer<'a> {
     pub fn next_token(&mut self) -> Token {
         // if this fn called after already EOF, do not continue anymore.
         if self.position == self.input_len {
-            return Token::EndOfFile
+            return Token::EndOfFile;
         }
 
         let token: Token;
@@ -60,22 +60,20 @@ impl<'a> Lexer<'a> {
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();
                     return lookup_ident(literal);
-                } else {
-                    if self.ch.is_ascii_alphanumeric() {
-                        let literal = self.read_number();
-                        match literal.parse::<IntegerSize>() {
-                            Ok(i) => return Token::Int(i),
-                            Err(_) => {
-                                if literal.as_bytes().is_empty() {
-                                    return Token::EndOfFile;
-                                } else {
-                                    panic!("integer literal parse error")
-                                }
+                } else if self.ch.is_ascii_alphanumeric() {
+                    let literal = self.read_number();
+                    match literal.parse::<IntegerSize>() {
+                        Ok(i) => return Token::Int(i),
+                        Err(_) => {
+                            if literal.as_bytes().is_empty() {
+                                return Token::EndOfFile;
+                            } else {
+                                panic!("integer literal parse error")
                             }
                         }
-                    } else {
-                        token = Token::Illegal(self.ch)
                     }
+                } else {
+                    token = Token::Illegal(self.ch)
                 }
             }
         }
