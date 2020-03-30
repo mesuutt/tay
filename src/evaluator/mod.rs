@@ -1,9 +1,27 @@
 mod env;
 mod object;
 
+use std::fmt;
 pub use env::Env;
 use object::Object;
 use crate::ast;
+
+#[derive(Debug)]
+struct EvalError {
+    message: String
+}
+
+impl EvalError {
+    fn new(msg: &str) -> EvalError {
+        EvalError{message: msg.to_string()}
+    }
+}
+
+impl fmt::Display for EvalError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,"{}",self.message)
+    }
+}
 
 pub struct Evaluator {
     env: Env,
@@ -73,8 +91,11 @@ impl Evaluator {
     fn eval_infix_expr(&self, operator: ast::Infix, left: Object, right: Object) -> Option<Object> {
         match (left, right) {
             (Object::Int(x), Object::Int(y)) => {
-                Some(self.eval_integer_infix_expr(operator, x, y))
-            },
+                match self.eval_integer_infix_expr(operator, x, y) {
+                    Ok(obj ) => Some(obj),
+                    Err(err) => Some(Object::Error(err.message)),
+                }
+            }
             _ => None
         }
     }
@@ -86,13 +107,24 @@ impl Evaluator {
         }
     }
 
-    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Object {
-        match operator {
-            ast::Infix::Minus => Object::Int(left_val - right_val),
-            ast::Infix::Plus => Object::Int(left_val + right_val),
-            ast::Infix::Mul => Object::Int(left_val * right_val),
-            ast::Infix::Div => Object::Int(left_val / right_val),
-        }
+    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Result<Object, EvalError> {
+        let aa = match operator {
+            ast::Infix::Minus => Ok(Object::Int(left_val - right_val)),
+            ast::Infix::Plus => Ok(Object::Int(left_val + right_val)),
+            ast::Infix::Mul => Ok(Object::Int(left_val * right_val)),
+            ast::Infix::Div => Ok(Object::Int(left_val / right_val)),
+            ast::Infix::Percent => Ok(Object::Int(left_val % right_val)),
+            ast::Infix::Exponent => {
+                let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
+                if is_overflow {
+                    return Err(EvalError::new("exponent too large"))
+                } else {
+                    Ok(Object::Int(num as i64))
+                }
+            }
+        };
+
+        aa
     }
 }
 

@@ -6,7 +6,6 @@ use std::io::Write;
 
 
 pub fn start() {
-
     loop {
         print!(">> ");
         io::stdout().flush().expect("stdout flush failed");

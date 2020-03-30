@@ -59,7 +59,8 @@ impl<'a> Parser<'a> {
     fn token_to_precedence(&self, token: &Token) -> Precedence {
         match token {
             Token::Plus | Token::Minus => Precedence::Sum,
-            Token::Asterisk | Token::Slash => Precedence::Product,
+            Token::Asterisk | Token::Slash | Token::Percent => Precedence::Product,
+            Token::Caret => Precedence::Exponent,
             Token::LParen => Precedence::Call,
             _ => Precedence::Lowest
         }
@@ -77,7 +78,7 @@ impl<'a> Parser<'a> {
         let mut program = Program::new();
         while !self.current_token_is(Token::EndOfFile) {
             if let Some(stmt) = self.parse_statement() {
-                 program.push(stmt);
+                program.push(stmt);
             }
             self.next_token();
         }
@@ -134,7 +135,7 @@ impl<'a> Parser<'a> {
         let mut left = match self.current_token {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
-            Token::Minus | Token::Plus | Token::Bang => self.parse_prefix_expr(),
+            Token::Minus | Token::Bang => self.parse_prefix_expr(),
             Token::LParen => self.parse_grouped_expr(),
             _ => return None
         };
@@ -144,7 +145,10 @@ impl<'a> Parser<'a> {
                 Token::Slash
                 | Token::Plus
                 | Token::Asterisk
-                | Token::Minus => {
+                | Token::Minus
+                | Token::Percent
+                | Token::Caret
+                => {
                     self.next_token();
                     left = self.parse_infix_expr(left.unwrap())
                 }
@@ -201,6 +205,8 @@ impl<'a> Parser<'a> {
             Token::Minus => Infix::Minus,
             Token::Asterisk => Infix::Mul,
             Token::Slash => Infix::Div,
+            Token::Caret => Infix::Exponent,
+            Token::Percent => Infix::Percent,
             _ => return None,
         };
 
@@ -321,7 +327,7 @@ mod test {
 
     #[test]
     fn infix_expr() {
-        let mut p = Parser::new(Lexer::new("5+15*18;"));
+        let mut p = Parser::new(Lexer::new("5 + 15 * 18;"));
         let prog = p.parse();
         assert_eq!(0, p.errors.len());
 
@@ -346,6 +352,7 @@ mod test {
     fn operator_precedence() {
         let data = vec![
             ("-a * b", "((-a) * b)"),
+            ("a ^ b % c * d", "(((a ^ b) % c) * d)"),
             ("!-a", "(!(-a))"),
             ("a + b + c", "((a + b) + c)"),
             ("a + b - c", "((a + b) - c)"),

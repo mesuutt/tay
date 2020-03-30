@@ -16,6 +16,8 @@ pub enum Token {
     Bang,
     Asterisk,
     Slash,
+    Percent,
+    Caret,
 
     Comma,
     Semicolon,
@@ -49,6 +51,8 @@ impl fmt::Display for Token {
             Token::Bang => write!(f, "!"),
             Token::Asterisk => write!(f, "*"),
             Token::Slash => write!(f, "/"),
+            Token::Caret => write!(f, "^"),
+            Token::Percent => write!(f, "%"),
 
             Token::Comma => write!(f, ","),
             Token::Semicolon => write!(f, ";"),

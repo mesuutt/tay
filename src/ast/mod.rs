@@ -26,6 +26,8 @@ pub enum Infix {
     Minus,
     Mul,
     Div,
+    Exponent,
+    Percent,
 }
 
 impl fmt::Display for Infix {
@@ -35,6 +37,8 @@ impl fmt::Display for Infix {
             Infix::Minus => write!(f, "-"),
             Infix::Mul => write!(f, "*"),
             Infix::Div => write!(f, "/"),
+            Infix::Percent => write!(f, "%"),
+            Infix::Exponent => write!(f, "^"),
         }
     }
 }
@@ -49,7 +53,7 @@ pub enum Expression {
     Call {
         func: Box<Expression>,
         args: Vec<Expression>,
-    }
+    },
 }
 
 impl fmt::Display for Expression {
@@ -66,8 +70,8 @@ impl fmt::Display for Expression {
             }
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
-            },
-            Expression::Call {func: _  , args} => {
+            }
+            Expression::Call { func: _, args } => {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
                 write!(f, "({})", arg_list.join(", "))
             }
@@ -114,8 +118,9 @@ pub type Program = BlockStatement;
 #[derive(PartialOrd, PartialEq)]
 pub enum Precedence {
     Lowest,
-    Sum,  // +
-    Product, // *
+    Sum, // +
+    Product, // *, /, %
+    Exponent, // ^
     Prefix, // -X, !X
     Call, // myFunc(x), LParen
 }

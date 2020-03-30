@@ -55,6 +55,9 @@ impl<'a> Lexer<'a> {
             '+' => token = Token::Plus,
             '{' => token = Token::LBrace,
             '}' => token = Token::RBrace,
+            '%' => token = Token::Percent,
+            '^' => token = Token::Caret,
+
             // '0' => token = Token::EndOfFile,
             _ => {
                 if self.ch.is_ascii_alphabetic() {
@@ -127,7 +130,7 @@ mod test {
     #[test]
     fn tokens() {
         let input = "let five = 5;
-let ten = 10;
+let ten = 10 ^ 2 % 4;
 
 let add = fn(x, y) {
   x + y;
@@ -144,6 +147,10 @@ let result = add(five, ten);";
             Token::Ident(String::from("ten")),
             Token::Assign,
             Token::Int(10),
+            Token::Caret,
+            Token::Int(2),
+            Token::Percent,
+            Token::Int(4),
             Token::Semicolon,
             Token::Let,
             Token::Ident(String::from("add")),
