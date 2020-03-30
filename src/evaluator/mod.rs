@@ -4,7 +4,6 @@ mod object;
 pub use env::Env;
 use object::Object;
 use crate::ast;
-use crate::ast::Expression;
 
 pub struct Evaluator {
     env: Env,
@@ -30,9 +29,18 @@ impl Evaluator {
         match expr {
             ast::Expression::Literal(lit) => Some(self.eval_literal(lit)),
             ast::Expression::Ident(ident) => Some(self.eval_ident(ident)),
-            ast::Expression::Prefix(prefix, expr) => {
+            ast::Expression::Prefix(operator, expr) => {
                 if let Some(right) = self.eval_expr(*expr) {
-                    self.eval_prefix_expr(prefix, right)
+                    self.eval_prefix_expr(operator, right)
+                } else {
+                    None
+                }
+            }
+            ast::Expression::Infix(operator, left_expr, right_expr) => {
+                let left = self.eval_expr(*left_expr);
+                let rigth = self.eval_expr(*right_expr);
+                if left.is_some() && rigth.is_some() {
+                    self.eval_infix_expr(operator, left.unwrap(), rigth.unwrap())
                 } else {
                     None
                 }
@@ -57,15 +65,33 @@ impl Evaluator {
 
     fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Option<Object> {
         match operator {
-            ast::Prefix::Minus => self.eval_minus_operator_expr(right),
+            ast::Prefix::Minus => self.eval_minus_prefix_operator_expr(right),
             _ => return None
         }
     }
 
-    fn eval_minus_operator_expr(&self, right: Object) -> Option<Object> {
+    fn eval_infix_expr(&self, operator: ast::Infix, left: Object, right: Object) -> Option<Object> {
+        match (left, right) {
+            (Object::Int(x), Object::Int(y)) => {
+                Some(self.eval_integer_infix_expr(operator, x, y))
+            },
+            _ => None
+        }
+    }
+
+    fn eval_minus_prefix_operator_expr(&self, right: Object) -> Option<Object> {
         match right {
             Object::Int(x) => Some(Object::Int(-x)),
             _ => None
+        }
+    }
+
+    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Object {
+        match operator {
+            ast::Infix::Minus => Object::Int(left_val - right_val),
+            ast::Infix::Plus => Object::Int(left_val + right_val),
+            ast::Infix::Mul => Object::Int(left_val * right_val),
+            ast::Infix::Div => Object::Int(left_val / right_val),
         }
     }
 }
@@ -91,6 +117,8 @@ mod test {
             ("5", 5),
             ("10", 10),
             ("-10", -10),
+            ("5 + 5 - 5", 5),
+            ("(5 + 5) * 5", 50),
         ];
 
         for (input, expected) in expected {

@@ -5,7 +5,6 @@ pub struct Ident(pub String);
 
 #[derive(PartialEq, Debug)]
 pub enum Prefix {
-    Plus,
     Minus,
     Bang,
 }
@@ -14,7 +13,6 @@ pub enum Prefix {
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Prefix::Plus => write!(f, "+"),
             Prefix::Minus => write!(f, "-"),
             Prefix::Bang => write!(f, "!"),
         }
@@ -69,7 +67,7 @@ impl fmt::Display for Expression {
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
             },
-            Expression::Call {func  , args} => {
+            Expression::Call {func: _  , args} => {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
                 write!(f, "({})", arg_list.join(", "))
             }

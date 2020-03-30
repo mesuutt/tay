@@ -9,7 +9,8 @@ pub fn start() {
 
     loop {
         print!(">> ");
-        io::stdout().flush();
+        io::stdout().flush().expect("stdout flush failed");
+
         let mut buf = String::new();
         match io::stdin().read_line(&mut buf) {
             Ok(_) => {
