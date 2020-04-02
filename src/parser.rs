@@ -156,7 +156,6 @@ impl<'a> Parser<'a> {
                     self.next_token();
                     left = self.parse_call_expr(left.unwrap())
                 }
-
                 _ => return left
             }
         }

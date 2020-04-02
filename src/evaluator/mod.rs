@@ -19,12 +19,11 @@ impl Evaluator {
     pub fn eval(&mut self, prog: ast::Program) -> Option<Object> {
         let mut result = None;
         for s in prog {
-
             match self.eval_statement(s) {
-                Some(Object::Error(msg))=> return Some(Object::Error(msg)),
+                Some(Object::Error(msg)) => return Some(Object::Error(msg)),
                 obj => {
                     result = obj
-                } ,
+                }
             }
         }
 
@@ -52,9 +51,15 @@ impl Evaluator {
             }
             ast::Expression::Infix(operator, left_expr, right_expr) => {
                 let left = self.eval_expr(*left_expr);
-                let rigth = self.eval_expr(*right_expr);
-                if left.is_some() && rigth.is_some() {
-                    self.eval_infix_expr(operator, left.unwrap(), rigth.unwrap())
+                let right = self.eval_expr(*right_expr);
+                if left.is_some() && right.is_some() {
+                    if let Some(Object::Error(_)) = left {
+                        left
+                    } else if let Some(Object::Error(_)) = right {
+                        right
+                    } else {
+                        self.eval_infix_expr(operator, left.unwrap(), right.unwrap())
+                    }
                 } else {
                     None
                 }
