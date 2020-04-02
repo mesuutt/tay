@@ -97,7 +97,7 @@ impl Evaluator {
                     Err(err) => Some(Object::Error(err)),
                 }
             }
-            _ => None // TODO: should be return error object
+            _ => None
         }
     }
 

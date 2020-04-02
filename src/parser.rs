@@ -88,6 +88,7 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> Option<Statement> {
         match self.current_token {
             Token::Let => self.parse_let_statement(),
+            Token::Ident(_) if self.peek_token_is(Token::Assign) => self.parse_let_statement(),
             _ => self.parse_expression_statement()
         }
     }
@@ -96,7 +97,8 @@ impl<'a> Parser<'a> {
         // If next token is not identifier return
         match self.peek_token {
             Token::Ident(_) => self.next_token(),
-            _ => return None,
+            _ => {} // for allowing variable assignment without let keyword
+            // _ => return None
         };
 
         let ident = match self.parse_ident() {
@@ -281,16 +283,19 @@ mod test {
     fn let_statement() {
         let input = r#"
         let x = 5;
-        let y = 10;"#;
+        let y = 10;
+        z = 20;
+        "#;
 
         let mut p = Parser::new(Lexer::new(input));
         let prog = p.parse();
-        assert_eq!(prog.len(), 2);
+        assert_eq!(prog.len(), 3);
         assert_eq!(p.get_errors().len(), 0);
 
         assert_eq!(prog, vec![
             Statement::Let(Ident(String::from("x")), Expression::Literal(Literal::Int(5))),
             Statement::Let(Ident(String::from("y")), Expression::Literal(Literal::Int(10))),
+            Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Int(20))),
         ]);
     }
 
