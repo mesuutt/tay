@@ -6,8 +6,8 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new() -> Env{
-        Env{
+    pub fn new() -> Env {
+        Env {
             store: HashMap::new()
         }
     }
@@ -18,4 +18,7 @@ impl Env {
         }
     }
 
+    pub fn set(&mut self, key: String, val: &Object) {
+        self.store.insert(key, val.clone());
+    }
 }

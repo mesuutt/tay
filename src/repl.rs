@@ -6,10 +6,11 @@ use std::io::Write;
 
 
 pub fn start() {
+    let mut evaluator = Evaluator::new(Env::new());
+
     loop {
         print!(">> ");
         io::stdout().flush().expect("stdout flush failed");
-
         let mut buf = String::new();
         match io::stdin().read_line(&mut buf) {
             Ok(_) => {
@@ -24,7 +25,6 @@ pub fn start() {
                     continue
                 }
 
-                let evaluator = Evaluator::new(Env::new());
                 match evaluator.eval(prog) {
                     Some(obj) => println!("{}", obj),
                     None => continue
