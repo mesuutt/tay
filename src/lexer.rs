@@ -90,7 +90,7 @@ impl<'a> Lexer<'a> {
 
     fn read_identifier(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphabetic() {
+        while self.ch.is_ascii_alphabetic() || self.ch == '_' {
             self.read_char();
         }
 
