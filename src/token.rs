@@ -2,13 +2,15 @@ use std::fmt;
 use std::fmt::{Formatter};
 
 pub type IntegerSize = i64;
+pub type FloatSize = f64;
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Illegal(char),
     EndOfFile,
     Ident(String),
     Int(IntegerSize),
+    Float(FloatSize),
 
     Assign,
     Plus,
@@ -43,6 +45,7 @@ impl fmt::Display for Token {
 
             Token::Ident(s) => write!(f, "Identifier({})", s),
             Token::Int(i) => i.fmt(f),
+            Token::Float(i) => i.fmt(f),
             Token::Boolean(b) => write!(f, "Boolean({})", b),
 
             Token::Assign => write!(f, "="),

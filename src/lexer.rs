@@ -1,5 +1,5 @@
 use crate::token::{
-    Token, lookup_ident, IntegerSize,
+    Token, lookup_ident, IntegerSize, FloatSize,
 };
 
 pub struct Lexer<'a> {
@@ -99,7 +99,7 @@ impl<'a> Lexer<'a> {
 
     fn read_number(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphanumeric() {
+        while self.ch.is_ascii_alphanumeric() || self.ch == '.' {
             self.read_char();
             /*if self.read_position > self.input_len {
                 break;
@@ -140,7 +140,9 @@ let add = fn(x, y) {
   x + y;
 };
 
-let result = add(five, ten);";
+let result = add(five, ten);
+my_float = 1.2;
+";
         let expected = vec![
             Token::Let,
             Token::Ident(String::from("five")),
@@ -181,6 +183,10 @@ let result = add(five, ten);";
             Token::Comma,
             Token::Ident(String::from("ten")),
             Token::RParen,
+            Token::Semicolon,
+            Token::Ident(String::from("my_float")),
+            Token::Assign,
+            Token::Float(1.2),
             Token::Semicolon,
             Token::EndOfFile,
         ];

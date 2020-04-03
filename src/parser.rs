@@ -137,6 +137,7 @@ impl<'a> Parser<'a> {
         let mut left = match self.current_token {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
+            Token::Float(_) => self.parse_float_literal(),
             Token::Minus | Token::Bang => self.parse_prefix_expr(),
             Token::LParen => self.parse_grouped_expr(),
             _ => return None
@@ -174,6 +175,13 @@ impl<'a> Parser<'a> {
     fn parse_integer_literal(&mut self) -> Option<Expression> {
         match self.current_token {
             Token::Int(num) => Some(Expression::Literal(Literal::Int(num.clone()))),
+            _ => None
+        }
+    }
+
+    fn parse_float_literal(&mut self) -> Option<Expression> {
+        match self.current_token {
+            Token::Float(num) => Some(Expression::Literal(Literal::Float(num.clone()))),
             _ => None
         }
     }
@@ -284,7 +292,7 @@ mod test {
         let input = r#"
         let x = 5;
         let y = 10;
-        z = 20;
+        let z = 1.2;
         "#;
 
         let mut p = Parser::new(Lexer::new(input));
@@ -295,7 +303,7 @@ mod test {
         assert_eq!(prog, vec![
             Statement::Let(Ident(String::from("x")), Expression::Literal(Literal::Int(5))),
             Statement::Let(Ident(String::from("y")), Expression::Literal(Literal::Int(10))),
-            Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Int(20))),
+            Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Float(1.2))),
         ]);
     }
 
@@ -308,12 +316,12 @@ mod test {
     }
 
     #[test]
-    fn integer_literal_expr() {
-        let mut p = Parser::new(Lexer::new("5;6;"));
+    fn integer_float_literal_expr() {
+        let mut p = Parser::new(Lexer::new("5;6.1;"));
         let prog = p.parse();
         let expected = vec![
             Statement::Expression(Expression::Literal(Literal::Int(5))),
-            Statement::Expression(Expression::Literal(Literal::Int(6))),
+            Statement::Expression(Expression::Literal(Literal::Float(6.1))),
         ];
         assert_eq!(prog, expected);
     }

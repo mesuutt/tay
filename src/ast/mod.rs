@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::token::{IntegerSize, FloatSize};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ident(pub String);
@@ -98,14 +99,16 @@ impl fmt::Display for Statement {
 
 #[derive(Debug, PartialEq)]
 pub enum Literal {
-    Int(i64),
+    Int(IntegerSize),
+    Float(FloatSize),
 }
 
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Literal::Int(int) => write!(f, "{}", int),
+            Literal::Int(x) => write!(f, "{}", x),
+            Literal::Float(x) => write!(f, "{}", x),
         }
     }
 }
