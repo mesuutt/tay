@@ -24,8 +24,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_char(&mut self) {
-        if self.read_position >= self.input_len {
-            self.ch = '0';
+        if self.read_position == self.input_len {
+            self.ch = '\0';
         } else if let Some(ch) = self.input.chars().nth(self.read_position) {
             self.ch = ch;
         }
@@ -57,8 +57,7 @@ impl<'a> Lexer<'a> {
             '}' => token = Token::RBrace,
             '%' => token = Token::Percent,
             '^' => token = Token::Caret,
-
-            // '0' => token = Token::EndOfFile,
+            '\0' => token = Token::EndOfFile,
             _ => {
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();
@@ -68,10 +67,15 @@ impl<'a> Lexer<'a> {
                     match literal.parse::<IntegerSize>() {
                         Ok(i) => return Token::Int(i),
                         Err(_) => {
-                            if literal.as_bytes().is_empty() {
-                                return Token::EndOfFile;
-                            } else {
+                            if !literal.contains('.') {
                                 panic!("integer literal parse error")
+                            }
+
+                            match literal.parse::<FloatSize>() {
+                                Ok(f) => return Token::Float(f),
+                                Err(_) => {
+                                    panic!("float literal parse error")
+                                }
                             }
                         }
                     }
@@ -97,9 +101,9 @@ impl<'a> Lexer<'a> {
         let pos = self.position;
         while self.ch.is_ascii_alphanumeric() {
             self.read_char();
-            if self.read_position > self.input_len {
+            /*if self.read_position > self.input_len {
                 break;
-            }
+            }*/
         }
 
         self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
