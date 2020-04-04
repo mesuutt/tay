@@ -5,8 +5,7 @@ use std::fmt;
 pub use env::Env;
 use object::Object;
 use crate::ast;
-use crate::token::{FloatSize, IntegerSize};
-use crate::ast::Infix;
+use crate::ast::{Infix, FloatSize, IntegerSize};
 
 pub struct Evaluator {
     env: Env,
@@ -199,13 +198,9 @@ impl Evaluator {
             return Some(value);
         }
 
-        match ident {
-            ast::Ident(name) => {
-                self.env.set(name, &value);
-                None
-            }
-            _ => None
-        }
+        let ast::Ident(name) = ident;
+        self.env.set(name, &value);
+        None
     }
 
     fn is_error(obj: &Object) -> bool {

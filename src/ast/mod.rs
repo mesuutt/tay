@@ -1,5 +1,7 @@
 use std::fmt;
-use crate::token::{IntegerSize, FloatSize};
+
+pub type IntegerSize = i64;
+pub type FloatSize = f64;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ident(pub String);
@@ -9,7 +11,6 @@ pub enum Prefix {
     Minus,
     Bang,
 }
-
 
 impl fmt::Display for Prefix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

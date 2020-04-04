@@ -1,17 +1,13 @@
 use std::fmt;
 use std::fmt::{Formatter};
 
-pub type IntegerSize = i64;
-pub type FloatSize = f64;
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Illegal(char),
     EndOfFile,
     Ident(String),
-    Int(IntegerSize),
-    Float(FloatSize),
-
+    Int(String),
+    Float(String),
     Assign,
     Plus,
     Minus,

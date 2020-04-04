@@ -1,5 +1,5 @@
 use crate::token::{
-    Token, lookup_ident, IntegerSize, FloatSize,
+    Token, lookup_ident,
 };
 
 pub struct Lexer<'a> {
@@ -64,20 +64,10 @@ impl<'a> Lexer<'a> {
                     return lookup_ident(literal);
                 } else if self.ch.is_ascii_alphanumeric() {
                     let literal = self.read_number();
-                    match literal.parse::<IntegerSize>() {
-                        Ok(i) => return Token::Int(i),
-                        Err(_) => {
-                            if !literal.contains('.') {
-                                panic!("integer literal parse error")
-                            }
-
-                            match literal.parse::<FloatSize>() {
-                                Ok(f) => return Token::Float(f),
-                                Err(_) => {
-                                    panic!("float literal parse error")
-                                }
-                            }
-                        }
+                    if literal.contains('.') {
+                        return Token::Float(literal)
+                    } else {
+                        return Token::Int(literal)
                     }
                 } else {
                     token = Token::Illegal(self.ch)
@@ -147,16 +137,16 @@ my_float = 1.2;
             Token::Let,
             Token::Ident(String::from("five")),
             Token::Assign,
-            Token::Int(5),
+            Token::Int(String::from("5")),
             Token::Semicolon,
             Token::Let,
             Token::Ident(String::from("ten")),
             Token::Assign,
-            Token::Int(10),
+            Token::Int(String::from("10")),
             Token::Caret,
-            Token::Int(2),
+            Token::Int(String::from("2")),
             Token::Percent,
-            Token::Int(4),
+            Token::Int(String::from("4")),
             Token::Semicolon,
             Token::Let,
             Token::Ident(String::from("add")),
@@ -186,7 +176,7 @@ my_float = 1.2;
             Token::Semicolon,
             Token::Ident(String::from("my_float")),
             Token::Assign,
-            Token::Float(1.2),
+            Token::Float(String::from("1.2")),
             Token::Semicolon,
             Token::EndOfFile,
         ];

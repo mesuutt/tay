@@ -29,7 +29,6 @@ pub fn start() {
                     Some(obj) => println!("{}", obj),
                     None => continue
                 }
-
             }
             Err(_) => panic!("read from STDIN failed")
         }

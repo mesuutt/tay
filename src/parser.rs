@@ -1,7 +1,9 @@
 use crate::token::Token;
 use crate::lexer::Lexer;
-use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix};
-
+use crate::ast::{
+    Program, Statement, Ident, Precedence, Expression,
+    Literal, Prefix, Infix, FloatSize, IntegerSize
+};
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -173,15 +175,31 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_integer_literal(&mut self) -> Option<Expression> {
-        match self.current_token {
-            Token::Int(num) => Some(Expression::Literal(Literal::Int(num.clone()))),
+        match &self.current_token {
+            Token::Int(literal) => {
+                match literal.parse::<IntegerSize>() {
+                    Ok(x) => Some(Expression::Literal(Literal::Int(x.clone()))),
+                    Err(_) => {
+                        self.errors.push(format!("integer parse error: '{}'", literal));
+                        None
+                    }
+                }
+            },
             _ => None
         }
     }
 
     fn parse_float_literal(&mut self) -> Option<Expression> {
-        match self.current_token {
-            Token::Float(num) => Some(Expression::Literal(Literal::Float(num.clone()))),
+        match &self.current_token {
+            Token::Float(literal) => {
+                match &literal.parse::<FloatSize>() {
+                    Ok(x) => Some(Expression::Literal(Literal::Float(x.clone()))),
+                    Err(_) => {
+                        self.errors.push(format!("float parse error: '{}'", literal));
+                        None
+                    }
+                }
+            },
             _ => None
         }
     }

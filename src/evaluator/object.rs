@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::token::{IntegerSize, FloatSize};
+use crate::ast::{IntegerSize, FloatSize};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Object {
