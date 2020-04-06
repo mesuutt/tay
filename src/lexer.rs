@@ -8,6 +8,8 @@ pub struct Lexer<'a> {
     read_position: usize,
     input_len: usize,
     ch: char,
+    pub row: usize,
+    pub col: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -18,6 +20,8 @@ impl<'a> Lexer<'a> {
             read_position: 0,
             input_len: input.len(),
             ch: '0',
+            row: 0,
+            col: 0,
         };
         lexer.read_char(); // initialize l.ch, l.position and l.read_position
         lexer
@@ -31,6 +35,7 @@ impl<'a> Lexer<'a> {
         }
         self.position = self.read_position;
         self.read_position += 1;
+        self.col += 1;
     }
 
     pub fn next_token(&mut self) -> Token {
@@ -65,9 +70,9 @@ impl<'a> Lexer<'a> {
                 } else if self.ch.is_ascii_alphanumeric() {
                     let literal = self.read_number();
                     if literal.contains('.') {
-                        return Token::Float(literal)
+                        return Token::Float(literal);
                     } else {
-                        return Token::Int(literal)
+                        return Token::Int(literal);
                     }
                 } else {
                     token = Token::Illegal(self.ch)
@@ -101,6 +106,10 @@ impl<'a> Lexer<'a> {
 
     fn skip_whitespace(&mut self) {
         while self.ch.is_whitespace() {
+            if self.ch == '\n' || self.ch == '\r' {
+                self.row += 1;
+                self.col = 0;
+            }
             self.read_char()
         }
     }
@@ -202,6 +211,35 @@ my_float = 1.2;
         for i in expected {
             let t = lex.next_token();
             assert_eq!(t, i);
+        }
+    }
+
+    #[test]
+    fn row_col() {
+        let input = r#"
+let a = foo;
+let b = bar;
+"#;
+        let expected = vec![
+            ('\n', 0, 1),
+            (' ', 1, 4),
+            (' ', 1, 6),
+            (' ', 1, 8),
+            (';', 1, 12),
+            ('\n', 1, 13),
+            (' ', 2, 4),
+            (' ', 2, 6),
+            (' ', 2, 8),
+            (';', 2, 12),
+            ('\n', 2, 13),
+            ('\0', 3, 2),
+        ];
+
+        let mut lex = Lexer::new(input);
+        for i in expected {
+            assert_eq!((lex.ch, lex.row, lex.col), i);
+            // println!("{:?}", (lex.ch, lex.row, lex.col));
+            let t = lex.next_token();
         }
     }
 }
