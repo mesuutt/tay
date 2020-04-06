@@ -3,18 +3,24 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::evaluator::{Evaluator, Env};
 use std::io::Write;
+use rustyline::Editor;
+use rustyline::error::ReadlineError;
 
 
 pub fn start() {
-    let mut evaluator = Evaluator::new(Env::new());
+    let env = Env::new();
+    let mut evaluator = Evaluator::new(env);
+    let mut rl = Editor::<()>::new();
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
 
     loop {
-        print!(">> ");
-        io::stdout().flush().expect("stdout flush failed");
-        let mut buf = String::new();
-        match io::stdin().read_line(&mut buf) {
-            Ok(_) => {
-                let lexer = Lexer::new(buf.as_str());
+        let readline = rl.readline(">> ");
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str());
+                let lexer = Lexer::new(line.as_str());
                 let mut p = Parser::new(lexer);
                 let prog = p.parse();
                 if !p.get_errors().is_empty() {
@@ -22,15 +28,28 @@ pub fn start() {
                     errors.iter().map(|e| {
                         println!("Parse error: {}", e);
                     });
-                    continue
+                    continue;
                 }
-
                 match evaluator.eval(prog) {
-                    Some(obj) => println!("{}", obj),
+                    Some(obj) => {
+                        println!("{}", obj)
+                    },
                     None => continue
                 }
+            },
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break
             }
-            Err(_) => panic!("read from STDIN failed")
         }
     }
+    rl.save_history("history.txt").unwrap();
 }
