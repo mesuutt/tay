@@ -36,13 +36,13 @@ pub enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Token::Illegal(c) => write!(f, "Illegal({})", c),
+            Token::Illegal(c) => write!(f, "{}", c),
             Token::EndOfFile => write!(f, "EOF",),
 
-            Token::Ident(s) => write!(f, "Identifier({})", s),
+            Token::Ident(s) => write!(f, "{}", s),
             Token::Int(i) => i.fmt(f),
             Token::Float(i) => i.fmt(f),
-            Token::Boolean(b) => write!(f, "Boolean({})", b),
+            Token::Boolean(b) => write!(f, "{}", b),
 
             Token::Assign => write!(f, "="),
             Token::Plus => write!(f, "+"),

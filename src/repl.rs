@@ -1,8 +1,6 @@
-use std::io;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::evaluator::{Evaluator, Env};
-use std::io::Write;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 
@@ -22,15 +20,14 @@ pub fn start() {
                 rl.add_history_entry(line.as_str());
                 let lexer = Lexer::new(line.as_str());
                 let mut p = Parser::new(lexer);
-                let prog = p.parse();
-                if !p.get_errors().is_empty() {
-                    let errors = p.get_errors();
-                    errors.iter().map(|e| {
-                        println!("Parse error: {}", e);
-                    });
+                let program = p.parse();
+                if !program.errors.is_empty() {
+                    for err in program.errors.iter() {
+                        println!("Parse error: {}", err);
+                    };
                     continue;
                 }
-                match evaluator.eval(prog) {
+                match evaluator.eval(program) {
                     Some(obj) => {
                         println!("{}", obj)
                     },

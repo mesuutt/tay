@@ -1,11 +1,10 @@
 mod env;
 mod object;
 
-use std::fmt;
 pub use env::Env;
 use object::Object;
 use crate::ast;
-use crate::ast::{Infix, FloatSize, IntegerSize};
+use crate::ast::{FloatSize, IntegerSize};
 
 pub struct Evaluator {
     env: Env,
@@ -17,9 +16,10 @@ impl Evaluator {
             env
         }
     }
+
     pub fn eval(&mut self, prog: ast::Program) -> Option<Object> {
         let mut result = None;
-        for s in prog {
+        for s in prog.statements {
             match self.eval_statement(s) {
                 Some(Object::Error(msg)) => return Some(Object::Error(msg)),
                 obj => {
@@ -27,7 +27,6 @@ impl Evaluator {
                 }
             }
         }
-
         result
     }
 
@@ -35,7 +34,6 @@ impl Evaluator {
         match statement {
             ast::Statement::Expression(expr) => self.eval_expr(expr),
             ast::Statement::Let(ident, expr) => self.eval_let_statement(ident, expr),
-            _ => None
         }
     }
 
@@ -53,16 +51,10 @@ impl Evaluator {
             ast::Expression::Infix(operator, left_expr, right_expr) => {
                 let left = self.eval_expr(*left_expr);
                 let right = self.eval_expr(*right_expr);
-                if left.is_some() && right.is_some() {
-                    if let Some(Object::Error(_)) = left {
-                        left
-                    } else if let Some(Object::Error(_)) = right {
-                        right
-                    } else {
-                        self.eval_infix_expr(operator, left.unwrap(), right.unwrap())
-                    }
-                } else {
-                    None
+                match (&left, &right) {
+                    (Some(Object::Error(_)), _) => left,
+                    (_, Some(Object::Error(_))) => right,
+                    _ => self.eval_infix_expr(operator, left.unwrap(), right.unwrap())
                 }
             }
             _ => None
@@ -80,14 +72,14 @@ impl Evaluator {
         let ast::Ident(name) = ident;
         match self.env.get(&name) {
             Some(val) => val,
-            None => Object::Error(format!("identifier not found: {}", name))
+            None => Object::Error(format!("'{}' not defined", name))
         }
     }
 
     fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Option<Object> {
         match operator {
             ast::Prefix::Minus => self.eval_minus_prefix_operator_expr(right),
-            _ => return None
+            _ => None
         }
     }
 
@@ -138,7 +130,7 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
                 if is_overflow {
-                    return Err(String::from("exponent too large"));
+                    Err(String::from("exponent too large"))
                 } else {
                     Ok(Object::Int(num as i64))
                 }
