@@ -1,10 +1,12 @@
 mod env;
 mod object;
+mod error;
 
 pub use env::Env;
 use object::Object;
 use crate::ast;
 use crate::ast::{FloatSize, IntegerSize};
+use crate::evaluator::error::EvalError;
 
 pub struct Evaluator {
     env: Env,
@@ -72,7 +74,7 @@ impl Evaluator {
         let ast::Ident(name) = ident;
         match self.env.get(&name) {
             Some(val) => val,
-            None => Object::Error(format!("'{}' not defined", name))
+            None => Object::Error(EvalError::UndefinedIdent(name.clone()))
         }
     }
 
@@ -125,12 +127,17 @@ impl Evaluator {
             ast::Infix::Minus => Ok(Object::Int(left_val - right_val)),
             ast::Infix::Plus => Ok(Object::Int(left_val + right_val)),
             ast::Infix::Mul => Ok(Object::Int(left_val * right_val)),
-            ast::Infix::Div => Ok(Object::Int(left_val / right_val)),
+            ast::Infix::Div => {
+                if right_val == 0 {
+                    return Err(EvalError::DivideByZero)
+                }
+                Ok(Object::Int(left_val / right_val))
+            },
             ast::Infix::Percent => Ok(Object::Int(left_val % right_val)),
             ast::Infix::Exponent => {
                 let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
                 if is_overflow {
-                    Err(String::from("exponent too large"))
+                    Err(EvalError::ExponentTooLarge)
                 } else {
                     Ok(Object::Int(num as i64))
                 }
@@ -138,12 +145,17 @@ impl Evaluator {
         }
     }
 
-    fn eval_float_with_float_infix_expr(&self, operator: ast::Infix, left_val: FloatSize, right_val: FloatSize) -> Result<Object, String> {
+    fn eval_float_infix_expr(&self, operator: ast::Infix, left_val: FloatSize, right_val: FloatSize) -> Result<Object, EvalError> {
         match operator {
             ast::Infix::Minus => Ok(Object::Float(left_val - right_val)),
             ast::Infix::Plus => Ok(Object::Float(left_val + right_val)),
             ast::Infix::Mul => Ok(Object::Float(left_val * right_val)),
-            ast::Infix::Div => Ok(Object::Float(left_val / right_val)),
+            ast::Infix::Div => {
+                if right_val == 0.0 {
+                    return Err(EvalError::DivideByZero)
+                }
+                Ok(Object::Float(left_val / right_val))
+            },
             ast::Infix::Percent => Ok(Object::Float(left_val % right_val)),
             ast::Infix::Exponent => {
                 let num = left_val.powf(right_val);

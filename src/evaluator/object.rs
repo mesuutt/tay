@@ -1,11 +1,12 @@
 use std::fmt;
 use crate::ast::{IntegerSize, FloatSize};
+use crate::evaluator::error::EvalError;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
-    Error(String),
+    Error(EvalError),
 }
 
 impl fmt::Display for Object {
