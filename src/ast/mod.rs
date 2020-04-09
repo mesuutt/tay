@@ -86,6 +86,7 @@ impl fmt::Display for Expression {
 pub enum Statement {
     Let(Ident, Expression),
     Expression(Expression), // x + 10;
+    Return(Expression),
 }
 
 impl fmt::Display for Statement {
@@ -94,7 +95,8 @@ impl fmt::Display for Statement {
             Statement::Let(ident, expr) => {
                 write!(f, "let {} = {};", ident.0, expr)
             }
-            Statement::Expression(expr) => write!(f, "{}", expr)
+            Statement::Expression(expr) => write!(f, "{}", expr),
+            Statement::Return(expr) => write!(f, "{}", expr),
         }
     }
 }

@@ -5,7 +5,6 @@ mod error;
 pub use env::Env;
 use object::Object;
 use crate::ast;
-use crate::ast::{FloatSize, IntegerSize};
 use crate::evaluator::error::EvalError;
 
 pub struct Evaluator {
@@ -24,6 +23,7 @@ impl Evaluator {
         for s in prog.statements {
             match self.eval_statement(s) {
                 Some(Object::Error(msg)) => return Some(Object::Error(msg)),
+                Some(Object::Return(val)) => return Some(*val),
                 obj => {
                     result = obj
                 }
@@ -36,6 +36,7 @@ impl Evaluator {
         match statement {
             ast::Statement::Expression(expr) => self.eval_expr(expr),
             ast::Statement::Let(ident, expr) => self.eval_let_statement(ident, expr),
+            ast::Statement::Return(expr) => self.eval_return_statement(expr),
         }
     }
 
@@ -117,10 +118,10 @@ impl Evaluator {
             ast::Infix::Mul => Ok(Object::Int(left_val * right_val)),
             ast::Infix::Div => {
                 if right_val == 0 {
-                    return Err(EvalError::DivideByZero)
+                    return Err(EvalError::DivideByZero);
                 }
                 Ok(Object::Int(left_val / right_val))
-            },
+            }
             ast::Infix::Percent => Ok(Object::Int(left_val % right_val)),
             ast::Infix::Exponent => {
                 let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
@@ -133,17 +134,17 @@ impl Evaluator {
         }
     }
 
-    fn eval_float_infix_expr(&self, operator: ast::Infix, left_val: FloatSize, right_val: FloatSize) -> Result<Object, EvalError> {
+    fn eval_float_infix_expr(&self, operator: ast::Infix, left_val: ast::FloatSize, right_val: ast::FloatSize) -> Result<Object, EvalError> {
         match operator {
             ast::Infix::Minus => Ok(Object::Float(left_val - right_val)),
             ast::Infix::Plus => Ok(Object::Float(left_val + right_val)),
             ast::Infix::Mul => Ok(Object::Float(left_val * right_val)),
             ast::Infix::Div => {
                 if right_val == 0.0 {
-                    return Err(EvalError::DivideByZero)
+                    return Err(EvalError::DivideByZero);
                 }
                 Ok(Object::Float(left_val / right_val))
-            },
+            }
             ast::Infix::Percent => Ok(Object::Float(left_val % right_val)),
             ast::Infix::Exponent => {
                 let num = left_val.powf(right_val);
@@ -165,6 +166,19 @@ impl Evaluator {
         let ast::Ident(name) = ident;
         self.env.set(name, &value);
         None
+    }
+
+    fn eval_return_statement(&self, expr: ast::Expression) -> Option<Object> {
+        let value = match self.eval_expr(expr) {
+            Some(obj) => obj,
+            _ => return None
+        };
+
+        if Self::is_error(&value) {
+            return Some(value);
+        }
+
+        Some(Object::Return(Box::new(value)))
     }
 
     fn is_error(obj: &Object) -> bool {
@@ -235,6 +249,21 @@ mod test {
         for (input, expected) in expected {
             let evaluated = test_eval(input);
             assert_eq!(evaluated, Some(Object::Int(expected)));
+        }
+    }
+
+
+    #[test]
+    fn return_statement() {
+        let expected = vec![
+            ("5+5; return 2; 2+2", Object::Int(2)),
+            ("return 10;", Object::Int(10)),
+            ("let a = 6; let b = a; return a+b; b;", Object::Int(12)),
+        ];
+
+        for (input, expected) in expected {
+            let evaluated = test_eval(input);
+            assert_eq!(evaluated, Some(expected));
         }
     }
 }

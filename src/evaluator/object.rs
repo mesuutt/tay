@@ -7,6 +7,7 @@ pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
     Error(EvalError),
+    Return(Box<Object>),
 }
 
 impl fmt::Display for Object {
@@ -15,6 +16,7 @@ impl fmt::Display for Object {
             Object::Int(x) => write!(f, "{}", x),
             Object::Float(x) => write!(f, "{}", x),
             Object::Error(err) => write!(f, "ERROR: {}", err),
+            Object::Return(x) => write!(f, "{}", x),
         }
     }
 }

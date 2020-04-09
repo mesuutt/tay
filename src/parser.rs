@@ -97,7 +97,9 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> Result<Statement, ParseError> {
         match self.current_token {
             Token::Let => self.parse_let_statement(),
+            Token::Return => self.parse_return_statement(),
             Token::Ident(_) if self.peek_token_is(Token::Assign) => self.parse_let_statement(),
+
             _ => self.parse_expression_statement()
         }
     }
@@ -129,6 +131,21 @@ impl<'a> Parser<'a> {
         }
 
         Ok(Statement::Let(ident, expr))
+    }
+
+    fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
+        self.next_token();
+
+        let expr = match self.parse_expression(Precedence::Lowest) {
+            Ok(expr) => expr,
+            Err(err) => return Err(err),
+        };
+
+        if self.peek_token_is(Token::Semicolon) {
+            self.next_token();
+        }
+
+        Ok(Statement::Return(expr))
     }
 
     fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
@@ -336,6 +353,26 @@ mod test {
             Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Float(1.2))),
         ]);
     }
+
+    #[test]
+    fn return_statement() {
+        let input = r#"
+        return 1;
+        return foo;
+        "#;
+
+        let mut p = Parser::new(Lexer::new(input));
+        let prog = p.parse();
+        assert_eq!(prog.statements.len(), 2);
+        assert_eq!(prog.errors.len(), 0);
+
+        assert_eq!(prog.statements, vec![
+            Statement::Return(Expression::Literal(Literal::Int(1))),
+            Statement::Return(Expression::Ident(Ident("foo".to_string()))),
+        ]);
+    }
+
+
 
     #[test]
     fn parser_errors() {
