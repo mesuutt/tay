@@ -6,6 +6,7 @@ use crate::evaluator::error::EvalError;
 pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
+    Bool(bool),
     Error(EvalError),
     Return(Box<Object>),
 }
@@ -15,6 +16,7 @@ impl fmt::Display for Object {
         match self {
             Object::Int(x) => write!(f, "{}", x),
             Object::Float(x) => write!(f, "{}", x),
+            Object::Bool(x) => write!(f, "{}", x),
             Object::Error(err) => write!(f, "ERROR: {}", err),
             Object::Return(x) => write!(f, "{}", x),
         }

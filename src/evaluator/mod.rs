@@ -68,6 +68,7 @@ impl Evaluator {
         match literal {
             ast::Literal::Int(x) => Object::Int(x),
             ast::Literal::Float(x) => Object::Float(x),
+            ast::Literal::Bool(x) => Object::Bool(x),
         }
     }
 

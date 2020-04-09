@@ -26,7 +26,7 @@ pub enum Token {
 
     Function,
     Let,
-    Boolean(bool),
+    Bool(bool),
 
     If,
     Else,
@@ -42,7 +42,7 @@ impl fmt::Display for Token {
             Token::Ident(s) => write!(f, "{}", s),
             Token::Int(i) => i.fmt(f),
             Token::Float(i) => i.fmt(f),
-            Token::Boolean(b) => write!(f, "{}", b),
+            Token::Bool(b) => write!(f, "{}", b),
 
             Token::Assign => write!(f, "="),
             Token::Plus => write!(f, "+"),
@@ -73,8 +73,8 @@ pub fn lookup_ident(literal: String) -> Token {
     match literal.as_str() {
         "fn" => Token::Function,
         "let" => Token::Let,
-        "true" => Token::Boolean(true),
-        "false" => Token::Boolean(false),
+        "true" => Token::Bool(true),
+        "false" => Token::Bool(false),
         "if" => Token::If,
         "else" => Token::Else,
         "return" => Token::Return,

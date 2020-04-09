@@ -166,6 +166,7 @@ impl<'a> Parser<'a> {
             Token::Ident(_) => self.parse_ident_expr(),
             Token::Int(_) => self.parse_integer_literal(),
             Token::Float(_) => self.parse_float_literal(),
+            Token::Bool(_) => self.parse_boolean(),
             Token::Minus | Token::Bang => self.parse_prefix_expr(),
             Token::LParen => self.parse_grouped_expr(),
             Token::Illegal(_) => return Err(ParseError::InvalidToken(self.current_token.clone())),
@@ -229,6 +230,13 @@ impl<'a> Parser<'a> {
                     Err(_) => Err(ParseError::InvalidSyntax(literal.clone()))
                 }
             }
+            _ => Err(ParseError::InvalidToken(self.current_token.clone()))
+        }
+    }
+
+    fn parse_boolean(&self) -> Result<Expression, ParseError> {
+        match self.current_token {
+            Token::Bool(x) => Ok(Expression::Literal(Literal::Bool(x))),
             _ => Err(ParseError::InvalidToken(self.current_token.clone()))
         }
     }
@@ -371,8 +379,6 @@ mod test {
             Statement::Return(Expression::Ident(Ident("foo".to_string()))),
         ]);
     }
-
-
 
     #[test]
     fn parser_errors() {
