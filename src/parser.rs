@@ -399,10 +399,11 @@ mod test {
 
     #[test]
     fn prefix_expr() {
-        let program = Parser::new(Lexer::new("!5;-15;")).parse();
+        let program = Parser::new(Lexer::new("!5;-15; !false")).parse();
         let expected = vec![
             Statement::Expression(Expression::Prefix(Prefix::Bang, Box::new(Expression::Literal(Literal::Int(5))))),
             Statement::Expression(Expression::Prefix(Prefix::Minus, Box::new(Expression::Literal(Literal::Int(15))))),
+            Statement::Expression(Expression::Prefix(Prefix::Bang, Box::new(Expression::Literal(Literal::Bool(false))))),
         ];
         assert_eq!(program.statements, expected);
     }

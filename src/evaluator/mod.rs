@@ -83,6 +83,7 @@ impl Evaluator {
     fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Option<Object> {
         match operator {
             ast::Prefix::Minus => self.eval_minus_prefix_operator_expr(right),
+            ast::Prefix::Bang => self.eval_bang_operator_expr(right),
             _ => None
         }
     }
@@ -111,6 +112,15 @@ impl Evaluator {
             _ => None
         }
     }
+
+    fn eval_bang_operator_expr(&self, right: Object) -> Option<Object> {
+        match right {
+            Object::Bool(true) => Some(Object::Bool(false)),
+            Object::Bool(false) => Some(Object::Bool(true)),
+            _ => None
+        }
+    }
+
 
     fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Result<Object, EvalError> {
         match operator {
