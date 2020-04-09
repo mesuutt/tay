@@ -94,19 +94,7 @@ impl Evaluator {
                 }
             }
             (Object::Float(x), Object::Float(y)) => {
-                match self.eval_float_with_float_infix_expr(operator, x, y) {
-                    Ok(obj) => Some(obj),
-                    Err(err) => Some(Object::Error(err)),
-                }
-            }
-            (Object::Float(x), Object::Int(y)) => {
-                match self.eval_float_with_int_infix_expr(operator, x, y) {
-                    Ok(obj) => Some(obj),
-                    Err(err) => Some(Object::Error(err)),
-                }
-            }
-            (Object::Int(x), Object::Float(y)) => {
-                match self.eval_int_with_float_infix_expr(operator, x, y) {
+                match self.eval_float_infix_expr(operator, x, y) {
                     Ok(obj) => Some(obj),
                     Err(err) => Some(Object::Error(err)),
                 }
@@ -122,7 +110,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Result<Object, String> {
+    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Result<Object, EvalError> {
         match operator {
             ast::Infix::Minus => Ok(Object::Int(left_val - right_val)),
             ast::Infix::Plus => Ok(Object::Int(left_val + right_val)),
@@ -160,34 +148,6 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 let num = left_val.powf(right_val);
                 Ok(Object::Float(num))
-            }
-        }
-    }
-
-    fn eval_float_with_int_infix_expr(&self, operator: ast::Infix, left_val: FloatSize, right_val: IntegerSize) -> Result<Object, String> {
-        match operator {
-            ast::Infix::Minus => Ok(Object::Float(left_val - right_val as FloatSize)),
-            ast::Infix::Plus => Ok(Object::Float(left_val + right_val as FloatSize)),
-            ast::Infix::Mul => Ok(Object::Float(left_val * right_val as FloatSize)),
-            ast::Infix::Div => Ok(Object::Float(left_val / right_val as FloatSize)),
-            ast::Infix::Percent => Ok(Object::Float(left_val % right_val as FloatSize)),
-            ast::Infix::Exponent => {
-                let num = left_val.powi(right_val as i32);
-                Ok(Object::Float(num))
-            }
-        }
-    }
-
-    fn eval_int_with_float_infix_expr(&self, operator: ast::Infix, left_val: IntegerSize, right_val: FloatSize) -> Result<Object, String> {
-        match operator {
-            ast::Infix::Minus => Ok(Object::Float(left_val as FloatSize - right_val)),
-            ast::Infix::Plus => Ok(Object::Float(left_val as FloatSize + right_val)),
-            ast::Infix::Mul => Ok(Object::Float(left_val as FloatSize * right_val)),
-            ast::Infix::Div => Ok(Object::Float(left_val as FloatSize / right_val)),
-            ast::Infix::Percent => Ok(Object::Float(left_val as FloatSize % right_val)),
-            ast::Infix::Exponent => {
-                let num = left_val.pow(right_val as u32);
-                Ok(Object::Float(num as FloatSize))
             }
         }
     }
