@@ -184,8 +184,9 @@ impl Evaluator {
             ast::Infix::Div => Ok(Object::Float(left_val / right_val as ast::FloatSize)),
             ast::Infix::Percent => Ok(Object::Float(left_val % right_val as ast::FloatSize)),
             ast::Infix::Exponent => {
-                let num = left_val.powi(right_val as i32);
-                Ok(Object::Float(num))
+                // let num = left_val.powi(right_val as i32);
+                // Ok(Object::Float(num))
+                Err(EvalError::TypeError("unsupported operand types for ^: 'float' and 'int'".to_string()))
             }
         }
     }
@@ -198,8 +199,9 @@ impl Evaluator {
             ast::Infix::Div => Ok(Object::Float(left_val as ast::FloatSize / right_val)),
             ast::Infix::Percent => Ok(Object::Float(left_val as ast::FloatSize % right_val)),
             ast::Infix::Exponent => {
-                let num = left_val.pow(right_val as u32);
-                Ok(Object::Float(num as ast::FloatSize))
+                // let num = left_val.pow(right_val as u32);
+                // Ok(Object::Float(num as ast::FloatSize))
+                Err(EvalError::TypeError("unsupported operand types for ^: 'int' and 'float'".to_string()))
             }
         }
     }

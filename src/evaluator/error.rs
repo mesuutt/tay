@@ -5,7 +5,8 @@ use std::fmt;
 pub enum EvalError {
     DivideByZero,
     ExponentTooLarge,
-    UndefinedIdent(String)
+    UndefinedIdent(String),
+    TypeError(String),
 }
 
 impl fmt::Display for EvalError {
@@ -13,7 +14,8 @@ impl fmt::Display for EvalError {
         match self {
             EvalError::DivideByZero => write!(f, "Division by zero"),
             EvalError::ExponentTooLarge => write!(f, "exponent too large"),
-            EvalError::UndefinedIdent(x) => write!(f, "undefined identifier: '{}'", x)
+            EvalError::UndefinedIdent(x) => write!(f, "undefined identifier: '{}'", x),
+            EvalError::TypeError(x) => write!(f, "TypeError: {}", x),
         }
     }
 }
