@@ -46,7 +46,7 @@ impl Evaluator {
             ast::Expression::Ident(ident) => Some(self.eval_ident(ident)),
             ast::Expression::Prefix(operator, expr) => {
                 if let Some(right) = self.eval_expr(*expr) {
-                    self.eval_prefix_expr(operator, right)
+                    Some(self.eval_prefix_expr(operator, right))
                 } else {
                     None
                 }
@@ -80,11 +80,10 @@ impl Evaluator {
         }
     }
 
-    fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Option<Object> {
+    fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Object {
         match operator {
             ast::Prefix::Minus => self.eval_minus_prefix_operator_expr(right),
             ast::Prefix::Bang => self.eval_bang_operator_expr(right),
-            _ => None
         }
     }
 
@@ -106,18 +105,18 @@ impl Evaluator {
         }
     }
 
-    fn eval_minus_prefix_operator_expr(&self, right: Object) -> Option<Object> {
+    fn eval_minus_prefix_operator_expr(&self, right: Object) -> Object {
         match right {
-            Object::Int(x) => Some(Object::Int(-x)),
-            _ => None
+            Object::Int(x) => Object::Int(-x),
+            _ => Object::Error(EvalError::TypeError(format!("unknown operator: '-{}'", right)))
         }
     }
 
-    fn eval_bang_operator_expr(&self, right: Object) -> Option<Object> {
+    fn eval_bang_operator_expr(&self, right: Object) -> Object {
         match right {
-            Object::Bool(true) => Some(Object::Bool(false)),
-            Object::Bool(false) => Some(Object::Bool(true)),
-            _ => None
+            Object::Bool(true) => Object::Bool(false),
+            Object::Bool(false) => Object::Bool(true),
+            _ => Object::Bool(false),
         }
     }
 
