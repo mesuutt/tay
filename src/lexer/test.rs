@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test {
     use crate::lexer::{Token, Lexer};
@@ -24,6 +23,8 @@ let add = fn(x, y) {
 
 let result = add(five, ten);
 my_float = 1.2;
+
+< <= == != > >=
 ";
         let expected = vec![
             Token::Let,
@@ -70,6 +71,12 @@ my_float = 1.2;
             Token::Assign,
             Token::Float(String::from("1.2")),
             Token::Semicolon,
+            Token::Lt,
+            Token::Lte,
+            Token::Eq,
+            Token::NotEq,
+            Token::Gt,
+            Token::Gte,
             Token::EndOfFile,
         ];
 

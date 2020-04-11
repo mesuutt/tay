@@ -1,9 +1,8 @@
-
 #[cfg(test)]
 pub mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
+    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix, BlockStatement};
 
     #[test]
     fn let_statement() {
@@ -40,6 +39,28 @@ pub mod test {
         assert_eq!(prog.statements, vec![
             Statement::Return(Expression::Literal(Literal::Int(1))),
             Statement::Return(Expression::Ident(Ident("foo".to_string()))),
+        ]);
+    }
+
+    #[test]
+    fn if_expression() {
+        let input = "if (x < y) {x} else {y}";
+        let mut p = Parser::new(Lexer::new(input));
+        let prog = p.parse();
+        assert_eq!(prog.statements.len(), 1);
+        assert_eq!(prog.errors.len(), 0);
+
+        assert_eq!(prog.statements, vec![
+            Statement::Expression(Expression::If {
+                condition: Box::new(
+                    Expression::Infix(
+                        Infix::Lt,
+                        Box::new(Expression::Ident(Ident("x".to_string()))),
+                        Box::new(Expression::Ident(Ident("y".to_string()))),
+                    )),
+                consequence: vec![Statement::Expression(Expression::Ident(Ident("x".to_string())))],
+                alternative: Some(vec![Statement::Expression(Expression::Ident(Ident("y".to_string())))]),
+            }),
         ]);
     }
 

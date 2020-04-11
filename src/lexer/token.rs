@@ -17,6 +17,13 @@ pub enum Token {
     Percent,
     Caret,
 
+    Gt,
+    Lt,
+    Gte,
+    Lte,
+    Eq,
+    NotEq,
+
     Comma,
     Semicolon,
     LParen,
@@ -52,6 +59,13 @@ impl fmt::Display for Token {
             Token::Slash => write!(f, "/"),
             Token::Caret => write!(f, "^"),
             Token::Percent => write!(f, "%"),
+
+            Token::Lt => write!(f, "<"),
+            Token::Gt => write!(f, ">"),
+            Token::Lte => write!(f, "<="),
+            Token::Gte => write!(f, "=<"),
+            Token::Eq => write!(f, "=="),
+            Token::NotEq => write!(f, "!="),
 
             Token::Comma => write!(f, ","),
             Token::Semicolon => write!(f, ";"),

@@ -31,6 +31,13 @@ pub enum Infix {
     Div,
     Exponent,
     Percent,
+
+    Gt,
+    Lt,
+    Gte,
+    Lte,
+    Eq,
+    NotEq,
 }
 
 impl fmt::Display for Infix {
@@ -42,6 +49,13 @@ impl fmt::Display for Infix {
             Infix::Div => write!(f, "/"),
             Infix::Percent => write!(f, "%"),
             Infix::Exponent => write!(f, "^"),
+
+            Infix::Gt => write!(f, ">"),
+            Infix::Lt => write!(f, "<"),
+            Infix::Lte => write!(f, "<="),
+            Infix::Gte => write!(f, ">="),
+            Infix::Eq => write!(f, "=="),
+            Infix::NotEq => write!(f, "!="),
         }
     }
 }
@@ -56,6 +70,12 @@ pub enum Expression {
     Call {
         func: Box<Expression>,
         args: Vec<Expression>,
+    },
+
+    If {
+        condition: Box<Expression>,
+        consequence: BlockStatement,
+        alternative: Option<BlockStatement>,
     },
 }
 
@@ -78,6 +98,20 @@ impl fmt::Display for Expression {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
                 write!(f, "({})", arg_list.join(", "))
             }
+            Expression::If { condition, consequence, alternative } => {
+                if !alternative.is_some() {
+                    write!(f, "if {} {} else {}",
+                           condition,
+                           consequence.iter().map(|x| format!("{}", x)).collect::<Vec<String>>().join(""),
+                           alternative.as_ref().unwrap().iter().map(|x| format!("{}", x)).collect::<Vec<String>>().join(""),
+                    )
+                } else {
+                    write!(f, "if {} {}",
+                           condition,
+                           consequence.iter().map(|x| format!("{}", x)).collect::<Vec<String>>().join("")
+                    )
+                }
+            }
         }
     }
 }
@@ -85,8 +119,10 @@ impl fmt::Display for Expression {
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(Ident, Expression),
-    Expression(Expression), // x + 10;
     Return(Expression),
+
+    // x + 10;
+    Expression(Expression),
 }
 
 impl fmt::Display for Statement {
@@ -119,7 +155,6 @@ impl fmt::Display for Literal {
     }
 }
 
-
 pub type BlockStatement = Vec<Statement>;
 
 pub struct Program {
@@ -131,9 +166,18 @@ pub struct Program {
 #[derive(PartialOrd, PartialEq)]
 pub enum Precedence {
     Lowest,
-    Sum, // +
-    Product, // *, /, %
-    Exponent, // ^
-    Prefix, // -X, !X
-    Call, // myFunc(x), LParen
+    // == or !=
+    Equal,
+    // < or >
+    LessGreater,
+    // + or -
+    Sum,
+    // *, /, %
+    Product,
+    // ^
+    Exponent,
+    // -X, !X
+    Prefix,
+    // myFunc(x), LParen
+    Call,
 }

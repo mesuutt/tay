@@ -3,10 +3,7 @@ mod test;
 
 use std::fmt;
 use crate::lexer::{Token, Lexer};
-use crate::ast::{
-    Program, Statement, Ident, Precedence, Expression,
-    Literal, Prefix, Infix, FloatSize, IntegerSize,
-};
+use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix, FloatSize, IntegerSize, BlockStatement};
 
 #[derive(PartialEq, Debug)]
 pub enum ParseError {
@@ -82,6 +79,8 @@ impl<'a> Parser<'a> {
         match token {
             Token::Plus | Token::Minus => Precedence::Sum,
             Token::Asterisk | Token::Slash | Token::Percent => Precedence::Product,
+            Token::Eq | Token::NotEq => Precedence::Equal,
+            Token::Lt | Token::Gt | Token::Lte | Token::Gte => Precedence::LessGreater,
             Token::Caret => Precedence::Exponent,
             Token::LParen => Precedence::Call,
             _ => Precedence::Lowest
@@ -171,6 +170,7 @@ impl<'a> Parser<'a> {
             Token::Bool(_) => self.parse_boolean(),
             Token::Minus | Token::Bang => self.parse_prefix_expr(),
             Token::LParen => self.parse_grouped_expr(),
+            Token::If => self.parse_if_expr(),
             Token::Illegal(_) => return Err(ParseError::InvalidToken(self.current_token.clone())),
             _ => {
                 return Err(ParseError::InvalidToken(self.current_token.clone()));
@@ -185,6 +185,13 @@ impl<'a> Parser<'a> {
                 | Token::Minus
                 | Token::Percent
                 | Token::Caret
+
+                | Token::Eq
+                | Token::NotEq
+                | Token::Lt
+                | Token::Gt
+                | Token::Lte
+                | Token::Gte
                 => {
                     self.next_token();
                     match left {
@@ -273,6 +280,12 @@ impl<'a> Parser<'a> {
             Token::Slash => Infix::Div,
             Token::Caret => Infix::Exponent,
             Token::Percent => Infix::Percent,
+            Token::Lt => Infix::Lt,
+            Token::Gt => Infix::Gt,
+            Token::Lte => Infix::Lte,
+            Token::Gte => Infix::Gte,
+            Token::Eq => Infix::Eq,
+            Token::NotEq => Infix::NotEq,
             _ => return Err(ParseError::InvalidToken(self.current_token.clone())),
         };
 
@@ -334,5 +347,62 @@ impl<'a> Parser<'a> {
         } else {
             expr
         }
+    }
+
+    fn parse_if_expr(&mut self) -> Result<Expression, ParseError> {
+        if self.expect_peek(Token::LParen).is_err() {
+            return Err(ParseError::InvalidSyntax(self.peek_token.to_string()));
+        }
+        self.next_token();
+
+        let condition = match self.parse_expression(Precedence::Lowest) {
+            Ok(expr) => expr,
+            Err(err) => return Err(err),
+        };
+
+        if self.expect_peek(Token::RParen).is_err() || self.expect_peek(Token::LBrace).is_err() {
+            return Err(ParseError::InvalidSyntax(self.peek_token.to_string()));
+        }
+
+        let consequence = match self.parse_block_statement() {
+            Ok(stmt) => stmt,
+            Err(err) => return Err(err),
+        };
+
+        let mut alternative = None;
+
+        if self.peek_token_is(Token::Else) {
+            self.next_token();
+            if self.expect_peek(Token::LBrace).is_err() {
+                return Err(ParseError::InvalidToken(self.peek_token.clone()));
+            }
+
+            match self.parse_block_statement() {
+                Ok(stmt) => alternative = Some(stmt),
+                Err(err) => return Err(err),
+            }
+        }
+
+        Ok(Expression::If {
+            condition: Box::new(condition),
+            consequence,
+            alternative,
+        })
+    }
+
+
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, ParseError> {
+        self.next_token();
+        let mut statements: BlockStatement = vec![];
+
+        while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::EndOfFile) {
+            match self.parse_statement() {
+                Ok(stmt) => statements.push(stmt),
+                Err(err) => return Err(err),
+            }
+            self.next_token();
+        }
+
+        Ok(statements)
     }
 }

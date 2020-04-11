@@ -6,6 +6,7 @@ pub use env::Env;
 use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalError;
+use crate::ast::FloatSize;
 
 pub struct Evaluator {
     env: Env,
@@ -141,6 +142,48 @@ impl Evaluator {
                     Object::Int(num as i64)
                 }
             }
+            ast::Infix::Lt => {
+                if left_val < right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gt => {
+                if left_val > right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Lte => {
+                if left_val <= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gte => {
+                if left_val >= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Eq => {
+                if left_val == right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::NotEq => {
+                if left_val != right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
         }
     }
 
@@ -160,6 +203,48 @@ impl Evaluator {
                 let num = left_val.powf(right_val);
                 Object::Float(num)
             }
+            ast::Infix::Lt => {
+                if (left_val as f64) < right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gt => {
+                if (left_val as f64) > right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Lte => {
+                if (left_val as f64) <= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gte => {
+                if (left_val as f64) >= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Eq => {
+                if (left_val as f64) == right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::NotEq => {
+                if (left_val as f64) != right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
         }
     }
 
@@ -175,6 +260,48 @@ impl Evaluator {
                 // Ok(Object::Float(num))
                 Object::Error(EvalError::TypeError("unsupported operand types for ^: 'float' and 'int'".to_string()))
             }
+            ast::Infix::Lt => {
+                if left_val < (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gt => {
+                if left_val > (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Lte => {
+                if left_val <= (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gte => {
+                if left_val >= (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Eq => {
+                if left_val == (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::NotEq => {
+                if left_val != (right_val as FloatSize) {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
         }
     }
 
@@ -189,6 +316,48 @@ impl Evaluator {
                 // let num = left_val.pow(right_val as u32);
                 // Ok(Object::Float(num as ast::FloatSize))
                 Object::Error(EvalError::TypeError("unsupported operand types for ^: 'int' and 'float'".to_string()))
+            }
+            ast::Infix::Lt => {
+                if (left_val as f64) < right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gt => {
+                if (left_val as f64) > right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Lte => {
+                if (left_val as f64) <= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Gte => {
+                if (left_val as f64) >= right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::Eq => {
+                if (left_val as f64) == right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
+            }
+            ast::Infix::NotEq => {
+                if (left_val as f64) != right_val {
+                    Object::Bool(true)
+                } else {
+                    Object::Bool(false)
+                }
             }
         }
     }

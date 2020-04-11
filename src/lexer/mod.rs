@@ -52,8 +52,6 @@ impl<'a> Lexer<'a> {
 
         match self.ch {
             '-' => token = Token::Minus,
-            '!' => token = Token::Bang,
-            '=' => token = Token::Assign,
             '*' => token = Token::Asterisk,
             '/' => token = Token::Slash,
             ';' => token = Token::Semicolon,
@@ -65,6 +63,38 @@ impl<'a> Lexer<'a> {
             '}' => token = Token::RBrace,
             '%' => token = Token::Percent,
             '^' => token = Token::Caret,
+            '=' => {
+                if self.next_ch_is('=') {
+                    self.read_char();
+                    token = Token::Eq;
+                } else {
+                    token = Token::Assign
+                }
+            }
+            '!' => {
+                if self.next_ch_is('=') {
+                    self.read_char();
+                    token = Token::NotEq;
+                } else {
+                    token = Token::Bang
+                }
+            },
+            '>' => {
+                if self.next_ch_is('=') {
+                    self.read_char();
+                    token = Token::Gte;
+                } else {
+                    token = Token::Gt
+                }
+            }
+            '<' => {
+                if self.next_ch_is('=') {
+                    self.read_char();
+                    token = Token::Lte;
+                } else {
+                    token = Token::Lt
+                }
+            }
             '\0' => token = Token::EndOfFile,
             _ => {
                 if self.ch.is_ascii_alphabetic() {
@@ -115,5 +145,16 @@ impl<'a> Lexer<'a> {
             }
             self.read_char()
         }
+    }
+
+    fn next_ch(&self) -> char {
+        if let Some(ch) = self.input.chars().nth(self.read_position) {
+            return ch
+        }
+        return '\0'
+    }
+
+    fn next_ch_is(&self, ch: char) -> bool {
+        self.next_ch() == ch
     }
 }
