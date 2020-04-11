@@ -51,18 +51,19 @@ impl<'a> Lexer<'a> {
         self.skip_whitespace();
 
         match self.ch {
+            '\0' => token = Token::EndOfFile,
             '-' => token = Token::Minus,
+            '+' => token = Token::Plus,
             '*' => token = Token::Asterisk,
             '/' => token = Token::Slash,
+            '%' => token = Token::Percent,
+            '^' => token = Token::Caret,
+            ',' => token = Token::Comma,
             ';' => token = Token::Semicolon,
             '(' => token = Token::LParen,
             ')' => token = Token::RParen,
-            ',' => token = Token::Comma,
-            '+' => token = Token::Plus,
             '{' => token = Token::LBrace,
             '}' => token = Token::RBrace,
-            '%' => token = Token::Percent,
-            '^' => token = Token::Caret,
             '=' => {
                 if self.next_ch_is('=') {
                     self.read_char();
@@ -95,7 +96,6 @@ impl<'a> Lexer<'a> {
                     token = Token::Lt
                 }
             }
-            '\0' => token = Token::EndOfFile,
             _ => {
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();

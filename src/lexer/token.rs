@@ -8,6 +8,8 @@ pub enum Token {
     Ident(String),
     Int(String),
     Float(String),
+    Bool(bool),
+    
     Assign,
     Plus,
     Minus,
@@ -30,14 +32,12 @@ pub enum Token {
     RParen,
     LBrace,
     RBrace,
-
-    Function,
     Let,
-    Bool(bool),
 
     If,
     Else,
     Return,
+    Function,
 }
 
 impl fmt::Display for Token {
