@@ -63,10 +63,12 @@ impl<'a> Parser<'a> {
     }
 
     fn peek_token_is(&self, token: Token) -> bool {
+        // TODO: should be get Token as ref
         self.peek_token == token
     }
 
     fn expect_peek(&mut self, token: Token) -> Result<bool, ParseError> {
+        // TODO: should be get Token as ref
         if self.peek_token == token {
             self.next_token();
             Ok(true)
@@ -171,6 +173,7 @@ impl<'a> Parser<'a> {
             Token::Minus | Token::Bang => self.parse_prefix_expr(),
             Token::LParen => self.parse_grouped_expr(),
             Token::If => self.parse_if_expr(),
+            Token::Function => self.parse_func_literal(),
             Token::Illegal(_) => return Err(ParseError::InvalidToken(self.current_token.clone())),
             _ => {
                 return Err(ParseError::InvalidToken(self.current_token.clone()));
@@ -298,9 +301,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_call_args(&mut self) -> Result<Vec<Expression>, ParseError> {
+    fn parse_expression_list(&mut self, end: Token) -> Result<Vec<Expression>, ParseError> {
         let mut args: Vec<Expression> = vec![];
-        if self.peek_token_is(Token::RParen) {
+        if self.peek_token_is(end.clone()) {
             self.next_token();
             return Ok(args);
         }
@@ -313,13 +316,14 @@ impl<'a> Parser<'a> {
         }
 
         while self.expect_peek(Token::Comma).is_ok() {  // Used expect_peek instead peek_token_is
-            self.next_token();
+            self.next_token(); // skip comma
             match self.parse_expression(Precedence::Lowest) {
                 Ok(expr) => args.push(expr),
                 Err(e) => return Err(e)
             }
         }
-        if !self.peek_token_is(Token::RParen) {
+
+        if self.expect_peek(end.clone()).is_err() {
             Err(ParseError::InvalidToken(self.peek_token.clone()))
         } else {
             Ok(args)
@@ -327,7 +331,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_call_expr(&mut self, func: Expression) -> Result<Expression, ParseError> {
-        let args = match self.parse_call_args() {
+        let args = match self.parse_expression_list(Token::RParen) {
             Ok(args) => args,
             Err(e) => return Err(e)
         };
@@ -336,6 +340,62 @@ impl<'a> Parser<'a> {
             func: Box::new(func),
             args,
         })
+    }
+
+    fn parse_func_literal(&mut self) -> Result<Expression, ParseError> {
+        if self.expect_peek(Token::LParen).is_err() {
+            return Err(ParseError::InvalidToken(self.peek_token.clone()));
+        }
+
+        let params = match self.parse_func_params() {
+            Ok(prs) => prs,
+            Err(e) => return Err(e),
+        };
+
+        if self.expect_peek(Token::LBrace).is_err() {
+            return Err(ParseError::InvalidToken(self.peek_token.clone()));
+        }
+
+        let body = match self.parse_block_statement() {
+            Ok(stmt) => stmt,
+            Err(e) => return Err(e),
+        };
+
+        Ok(Expression::Func {
+            params,
+            body,
+        })
+    }
+
+    fn parse_func_params(&mut self) -> Result<Vec<Ident>, ParseError> {
+        let mut idents = vec![];
+
+        if self.peek_token_is(Token::RParen) {
+            self.next_token();
+            return Ok(idents);
+        }
+
+        self.next_token();
+
+        match self.parse_ident() {
+            Ok(id) => idents.push(id),
+            Err(e) => return Err(e),
+        }
+
+        while self.peek_token_is(Token::Comma) {
+            self.next_token();
+            self.next_token();
+            match self.parse_ident() {
+                Ok(id) => idents.push(id),
+                Err(e) => return Err(e),
+            }
+        }
+
+        if self.expect_peek(Token::RParen).is_err() {
+            return Err(ParseError::InvalidToken(self.peek_token.clone()));
+        }
+
+        Ok(idents)
     }
 
     fn parse_grouped_expr(&mut self) -> Result<Expression, ParseError> {

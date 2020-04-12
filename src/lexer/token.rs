@@ -9,7 +9,7 @@ pub enum Token {
     Int(String),
     Float(String),
     Bool(bool),
-    
+
     Assign,
     Plus,
     Minus,

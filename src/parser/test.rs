@@ -64,6 +64,45 @@ pub mod test {
         ]);
     }
 
+
+    #[test]
+    fn function() {
+        let expected = vec![
+            ("fn () {}", Vec::<&str>::new(), Vec::<&str>::new()),
+            ("fn (x, y) {x * y}", vec!["x", "y"], vec!["(x * y)"]),
+            ("fn (x, y, z) {x * y * z}", vec!["x", "y", "z"], vec!["((x * y) * z)"]),
+        ];
+
+        for (input, expect_param, expect_body) in expected {
+            let mut p = Parser::new(Lexer::new(input));
+            let program = p.parse();
+            assert_eq!(program.statements.len(), 1);
+            assert_eq!(program.errors.len(), 0);
+
+            if let Statement::Expression(Expression::Func { params, body }) = program.statements.first().unwrap() {
+                assert_eq!(params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), expect_param);
+                assert_eq!(body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), expect_body)
+            } else {
+                assert!(false)
+            }
+        }
+    }
+
+
+    #[test]
+    fn call_expression() {
+        let program = Parser::new(Lexer::new("add(1, 2)")).parse();
+        assert_eq!(program.statements.len(), 1);
+        assert_eq!(program.errors.len(), 0);
+        if let Statement::Expression(Expression::Call { func, args }) = program.statements.first().unwrap() {
+            assert_eq!(format!("{}", *func), "add");
+            assert_eq!(args.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), vec!["1", "2"]);
+        } else {
+            assert!(false)
+        }
+    }
+
+
     #[test]
     fn parser_errors() {
         let invalid_input = "let x 5;";
@@ -128,6 +167,10 @@ pub mod test {
             ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
             ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
             ("(5 + 5) * 2", "((5 + 5) * 2)"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+            ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+            ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")
         ];
 
         for &(input, expected) in data.iter() {
