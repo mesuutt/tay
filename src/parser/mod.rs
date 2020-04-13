@@ -323,7 +323,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        if self.expect_peek(end.clone()).is_err() {
+        if self.expect_peek(end).is_err() {
             Err(ParseError::InvalidToken(self.peek_token.clone()))
         } else {
             Ok(args)

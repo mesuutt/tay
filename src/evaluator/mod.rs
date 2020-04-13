@@ -278,42 +278,42 @@ impl Evaluator {
                 Object::Float(num)
             }
             ast::Infix::Lt => {
-                if (left_val as f64) < right_val {
+                if (left_val as FloatSize) < right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Gt => {
-                if (left_val as f64) > right_val {
+                if (left_val as FloatSize) > right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Lte => {
-                if (left_val as f64) <= right_val {
+                if (left_val as FloatSize) <= right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Gte => {
-                if (left_val as f64) >= right_val {
+                if (left_val as FloatSize) >= right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Eq => {
-                if (left_val as f64) == right_val {
+                if ((left_val as FloatSize) - right_val).abs() == 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::NotEq => {
-                if (left_val as f64) != right_val {
+                if ((left_val as FloatSize) - right_val).abs() != 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
@@ -332,7 +332,7 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 // let num = left_val.powi(right_val as i32);
                 // Ok(Object::Float(num))
-                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'float' and 'int'".to_string()))
+                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'float' and 'int'".to_owned()))
             }
             ast::Infix::Lt => {
                 if left_val < (right_val as FloatSize) {
@@ -363,14 +363,14 @@ impl Evaluator {
                 }
             }
             ast::Infix::Eq => {
-                if left_val == (right_val as FloatSize) {
+                if (left_val - (right_val as FloatSize)).abs() == 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::NotEq => {
-                if left_val != (right_val as FloatSize) {
+                if (left_val - (right_val as FloatSize)).abs() != 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
@@ -389,45 +389,45 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 // let num = left_val.pow(right_val as u32);
                 // Ok(Object::Float(num as ast::FloatSize))
-                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'int' and 'float'".to_string()))
+                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'int' and 'float'".to_owned()))
             }
             ast::Infix::Lt => {
-                if (left_val as f64) < right_val {
+                if (left_val as FloatSize) < right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Gt => {
-                if (left_val as f64) > right_val {
+                if (left_val as FloatSize) > right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Lte => {
-                if (left_val as f64) <= right_val {
+                if (left_val as FloatSize) <= right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Gte => {
-                if (left_val as f64) >= right_val {
+                if (left_val as FloatSize) >= right_val {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::Eq => {
-                if (left_val as f64) == right_val {
+                if ((left_val as FloatSize) - right_val).abs() == 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
                 }
             }
             ast::Infix::NotEq => {
-                if (left_val as f64) != right_val {
+                if (right_val - (left_val as FloatSize)).abs() != 0.0 {
                     Object::Bool(true)
                 } else {
                     Object::Bool(false)
