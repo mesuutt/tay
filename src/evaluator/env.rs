@@ -1,14 +1,19 @@
 use super::object::Object;
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
+#[derive(PartialEq, Debug, Clone)]
 pub struct Env {
-    store: HashMap<String, Object>
+    store: HashMap<String, Object>,
+    outer: Option<Rc<RefCell<Env>>>, // Without RefCell we can't borrow Env as mutable
 }
 
 impl Env {
-    pub fn new() -> Env {
+    pub fn new() -> Self {
         Env {
-            store: HashMap::new()
+            store: HashMap::new(),
+            outer: None,
         }
     }
 
@@ -21,5 +26,12 @@ impl Env {
 
     pub fn set(&mut self, key: String, val: &Object) {
         self.store.insert(key, val.clone());
+    }
+
+    pub fn new_with_outer(outer: &Rc<RefCell<Env>>) -> Self {
+        Env {
+            store: HashMap::new(),
+            outer: Some(outer.clone()),
+        }
     }
 }

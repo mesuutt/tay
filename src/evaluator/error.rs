@@ -7,6 +7,7 @@ pub enum EvalError {
     ExponentTooLarge,
     UndefinedIdent(String),
     TypeError(String),
+    EvaluationError(String),
 }
 
 impl fmt::Display for EvalError {
@@ -16,6 +17,7 @@ impl fmt::Display for EvalError {
             EvalError::ExponentTooLarge => write!(f, "exponent too large"),
             EvalError::UndefinedIdent(x) => write!(f, "undefined identifier: '{}'", x),
             EvalError::TypeError(x) => write!(f, "TypeError: {}", x),
+            EvalError::EvaluationError(x) => write!(f, "EvaluationError: {}", x),
         }
     }
 }

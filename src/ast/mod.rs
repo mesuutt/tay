@@ -7,7 +7,13 @@ pub type FloatSize = f64;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Ident(pub String);
 
-#[derive(PartialEq, Debug)]
+impl fmt::Display for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Prefix {
     Minus,
     Bang,
@@ -23,7 +29,7 @@ impl fmt::Display for Prefix {
 }
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Infix {
     Plus,
     Minus,
@@ -61,15 +67,24 @@ impl fmt::Display for Infix {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Ident(Ident),
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
+
+    // myFunc(x, y)
     Call {
+        // func should be Ident or Expression::Func
         func: Box<Expression>,
         args: Vec<Expression>,
+    },
+
+    // fn (x, y) {}
+    Func {
+        params: Vec<Ident>,
+        body: BlockStatement,
     },
 
     If {
@@ -94,10 +109,16 @@ impl fmt::Display for Expression {
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
             }
-            Expression::Call { func: _, args } => {
+            Expression::Call { func, args } => {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
-                write!(f, "({})", arg_list.join(", "))
+                write!(f, "{}({})", func, arg_list.join(", "))
             }
+            Expression::Func { params, body } => {
+                let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                let statement_list = body.into_iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
+            }
+
             Expression::If { condition, consequence, alternative } => {
                 if !alternative.is_some() {
                     write!(f, "if {} {} else {}",
@@ -116,7 +137,7 @@ impl fmt::Display for Expression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Let(Ident, Expression),
     Return(Expression),
@@ -137,7 +158,7 @@ impl fmt::Display for Statement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Int(IntegerSize),
     Float(FloatSize),

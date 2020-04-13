@@ -6,25 +6,50 @@ pub use env::Env;
 use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalError;
-use crate::ast::FloatSize;
+use crate::ast::{FloatSize, Expression};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub struct Evaluator {
-    env: Env,
+    env: Rc<RefCell<Env>>,  // Without RefCell we can't borrow Env as mutable
 }
 
 impl Evaluator {
-    pub fn new(env: Env) -> Evaluator {
+    pub fn new(env: Rc<RefCell<Env>>) -> Evaluator {
         Evaluator {
-            env
+            env: env,
         }
     }
 
     pub fn eval(&mut self, prog: ast::Program) -> Option<Object> {
         let mut result = None;
         for s in prog.statements {
-            match self.eval_statement(s) {
+            match self.eval_statement(&s) {
                 Some(Object::Error(msg)) => return Some(Object::Error(msg)),
                 Some(Object::Return(val)) => return Some(*val),
+                obj => {
+                    result = obj;
+                }
+            }
+        }
+
+        result
+    }
+
+    fn eval_statement(&mut self, statement: &ast::Statement) -> Option<Object> {
+        match statement {
+            ast::Statement::Expression(expr) => self.eval_expr(expr),
+            ast::Statement::Let(ident, expr) => self.eval_let_statement(ident, expr),
+            ast::Statement::Return(expr) => self.eval_return_statement(expr),
+        }
+    }
+
+    fn eval_block_statement(&mut self, statement: &ast::BlockStatement) -> Option<Object> {
+        let mut result = None;
+        for s in statement {
+            match self.eval_statement(s) {
+                Some(Object::Return(value)) => return Some(Object::Return(value)),
+                Some(Object::Error(msg)) => return Some(Object::Error(msg)),
                 obj => {
                     result = obj
                 }
@@ -33,62 +58,112 @@ impl Evaluator {
         result
     }
 
-    fn eval_statement(&mut self, statement: ast::Statement) -> Option<Object> {
-        match statement {
-            ast::Statement::Expression(expr) => self.eval_expr(expr),
-            ast::Statement::Let(ident, expr) => self.eval_let_statement(ident, expr),
-            ast::Statement::Return(expr) => self.eval_return_statement(expr),
-        }
-    }
-
-    fn eval_expr(&self, expr: ast::Expression) -> Option<Object> {
+    fn eval_expr(&mut self, expr: &ast::Expression) -> Option<Object> {
         match expr {
             ast::Expression::Literal(lit) => Some(self.eval_literal(lit)),
             ast::Expression::Ident(ident) => Some(self.eval_ident(ident)),
             ast::Expression::Prefix(operator, expr) => {
-                if let Some(right) = self.eval_expr(*expr) {
+                if let Some(right) = self.eval_expr(&*expr) {
                     Some(self.eval_prefix_expr(operator, right))
                 } else {
                     None
                 }
             }
             ast::Expression::Infix(operator, left_expr, right_expr) => {
-                let left = self.eval_expr(*left_expr);
-                let right = self.eval_expr(*right_expr);
+                let left = self.eval_expr(&*left_expr);
+                let right = self.eval_expr(&*right_expr);
                 match (&left, &right) {
                     (Some(Object::Error(_)), _) => left,
                     (_, Some(Object::Error(_))) => right,
                     _ => self.eval_infix_expr(operator, left.unwrap(), right.unwrap())
                 }
             }
+            ast::Expression::Func { params, body } => {
+                Some(Object::Func(params.to_vec(), body.to_vec(), self.env.clone()))
+            }
+            ast::Expression::Call { func, args } => {
+                Some(self.eval_call_expr(func, args))
+            }
             _ => None
         }
     }
 
-    fn eval_literal(&self, literal: ast::Literal) -> Object {
+    fn eval_call_expr(&mut self, func_expr: &Expression, call_with_args: &[Expression]) -> Object {
+        let args = match self.eval_expressions(call_with_args) {
+            Some(object_list) => {
+                if object_list.len() == 1 && Self::is_error(object_list.first().unwrap()) {
+                    return object_list.first().unwrap().clone();
+                }
+                object_list
+            }
+            None => {
+                return Object::Error(EvalError::EvaluationError("call exprresion cannot evaluated".to_owned()));
+            }
+        };
+
+        let func_obj = self.eval_expr(&*func_expr);
+        match &func_obj {
+            Some(Object::Func(params, _body, _env)) => {
+                if params.len() != call_with_args.len() {
+                    return Object::Error(EvalError::EvaluationError(format!("'{}' function takes {} positional arguments but {} were given", func_expr, params.len(), call_with_args.len())));
+                }
+            }
+            Some(Object::Error(e)) => return Object::Error(e.to_owned()),
+            _ => {}
+        }
+
+        self.apply_func(&func_obj.unwrap(), &args)
+    }
+
+
+    fn eval_expressions(&mut self, exprs: &[Expression]) -> Option<Vec<Object>> {
+        let mut result = Vec::<Object>::new();
+        for e in exprs {
+            let evaluated = match self.eval_expr(&e) {
+                Some(expr) => {
+                    if Self::is_error(&expr) {
+                        result.push(expr);
+                        return Some(result);
+                    }
+                    expr
+                }
+                None => {
+                    result.push(Object::Error(EvalError::EvaluationError(format!("{} cannot evaluated", e))));
+                    return Some(result);
+                }
+            };
+            result.push(evaluated)
+        }
+
+        Some(result)
+    }
+
+    fn eval_literal(&self, literal: &ast::Literal) -> Object {
         match literal {
-            ast::Literal::Int(x) => Object::Int(x),
-            ast::Literal::Float(x) => Object::Float(x),
-            ast::Literal::Bool(x) => Object::Bool(x),
+            ast::Literal::Int(x) => Object::Int(*x),
+            ast::Literal::Float(x) => Object::Float(*x),
+            ast::Literal::Bool(x) => Object::Bool(*x),
         }
     }
 
-    fn eval_ident(&self, ident: ast::Ident) -> Object {
+    fn eval_ident(&self, ident: &ast::Ident) -> Object {
         let ast::Ident(name) = ident;
-        match self.env.get(&name) {
+
+        // If we use borrow() instead borrow_mut() value removing after return.
+        match self.env.borrow_mut().get(&name) {
             Some(val) => val,
             None => Object::Error(EvalError::UndefinedIdent(name.clone()))
         }
     }
 
-    fn eval_prefix_expr(&self, operator: ast::Prefix, right: Object) -> Object {
+    fn eval_prefix_expr(&self, operator: &ast::Prefix, right: Object) -> Object {
         match operator {
             ast::Prefix::Minus => self.eval_minus_prefix_operator_expr(right),
             ast::Prefix::Bang => self.eval_bang_operator_expr(right),
         }
     }
 
-    fn eval_infix_expr(&self, operator: ast::Infix, left: Object, right: Object) -> Option<Object> {
+    fn eval_infix_expr(&self, operator: &ast::Infix, left: Object, right: Object) -> Option<Object> {
         match (left, right) {
             (Object::Int(x), Object::Int(y)) => {
                 Some(self.eval_integer_infix_expr(operator, x, y))
@@ -121,8 +196,7 @@ impl Evaluator {
         }
     }
 
-
-    fn eval_integer_infix_expr(&self, operator: ast::Infix, left_val: i64, right_val: i64) -> Object {
+    fn eval_integer_infix_expr(&self, operator: &ast::Infix, left_val: i64, right_val: i64) -> Object {
         match operator {
             ast::Infix::Minus => Object::Int(left_val - right_val),
             ast::Infix::Plus => Object::Int(left_val + right_val),
@@ -187,7 +261,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_float_infix_expr(&self, operator: ast::Infix, left_val: ast::FloatSize, right_val: ast::FloatSize) -> Object {
+    fn eval_float_infix_expr(&self, operator: &ast::Infix, left_val: ast::FloatSize, right_val: ast::FloatSize) -> Object {
         match operator {
             ast::Infix::Minus => Object::Float(left_val - right_val),
             ast::Infix::Plus => Object::Float(left_val + right_val),
@@ -248,7 +322,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_float_with_int_infix_expr(&self, operator: ast::Infix, left_val: ast::FloatSize, right_val: ast::IntegerSize) -> Object {
+    fn eval_float_with_int_infix_expr(&self, operator: &ast::Infix, left_val: ast::FloatSize, right_val: ast::IntegerSize) -> Object {
         match operator {
             ast::Infix::Minus => Object::Float(left_val - right_val as ast::FloatSize),
             ast::Infix::Plus => Object::Float(left_val + right_val as ast::FloatSize),
@@ -305,7 +379,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_int_with_float_infix_expr(&self, operator: ast::Infix, left_val: ast::IntegerSize, right_val: ast::FloatSize) -> Object {
+    fn eval_int_with_float_infix_expr(&self, operator: &ast::Infix, left_val: ast::IntegerSize, right_val: ast::FloatSize) -> Object {
         match operator {
             ast::Infix::Minus => Object::Float(left_val as ast::FloatSize - right_val),
             ast::Infix::Plus => Object::Float(left_val as ast::FloatSize + right_val),
@@ -362,7 +436,7 @@ impl Evaluator {
         }
     }
 
-    fn eval_let_statement(&mut self, ident: ast::Ident, expr: ast::Expression) -> Option<Object> {
+    fn eval_let_statement(&mut self, ident: &ast::Ident, expr: &ast::Expression) -> Option<Object> {
         let value = match self.eval_expr(expr) {
             Some(val) => val,
             None => return None
@@ -373,12 +447,12 @@ impl Evaluator {
         }
 
         let ast::Ident(name) = ident;
-        self.env.set(name, &value);
+        self.env.borrow_mut().set(name.clone(), &value);
         None
     }
 
-    fn eval_return_statement(&self, expr: ast::Expression) -> Option<Object> {
-        let value = match self.eval_expr(expr) {
+    fn eval_return_statement(&mut self, expr: &ast::Expression) -> Option<Object> {
+        let value = match self.eval_expr(&expr) {
             Some(obj) => obj,
             _ => return None
         };
@@ -396,6 +470,42 @@ impl Evaluator {
             _ => false
         }
     }
+
+
+    fn apply_func(&mut self, func: &Object, args: &[Object]) -> Object {
+        let current_env = self.env.clone();
+        if let Object::Func(_params, body, _) = func {
+            let extended_env = Self::extend_func_env(func, args);
+
+            // Switching scope before evaluate block
+            self.env = Rc::new(RefCell::new(extended_env));
+
+            let obj = match self.eval_block_statement(body) {
+                Some(Object::Return(obj)) => *obj,
+                Some(o) => o, // Evaluated expression result without return statement.
+                None => Object::Error(EvalError::EvaluationError("apply func error".to_owned()))
+            };
+            self.env = current_env;
+
+            obj
+        } else {
+            Object::Error(EvalError::EvaluationError("invalid func literal".to_owned()))
+        }
+    }
+
+    fn extend_func_env(func: &Object, call_args: &[Object]) -> Env {
+        // Add function parameters to env of function
+        if let Object::Func(params, _, outer_env) = func {
+            let mut env = Env::new_with_outer(&outer_env);
+
+            for (i, param) in params.iter().enumerate() {
+                env.set(param.0.clone(), call_args.get(i).unwrap())
+            }
+            return env;
+        }
+
+        Env::new() // FIXME: this line should not be run
+    }
 }
 
 
@@ -406,11 +516,15 @@ mod test {
     use crate::parser::Parser;
     use super::{Evaluator, Object};
     use crate::evaluator::error::EvalError;
+    use crate::ast;
+    use crate::ast::BlockStatement;
+    use std::rc::Rc;
+    use std::cell::RefCell;
 
     fn test_eval(input: &str) -> Option<Object> {
         let prog = Parser::new(Lexer::new(input)).parse();
         let env = Env::new();
-        let mut evaluator = Evaluator::new(env);
+        let mut evaluator = Evaluator::new(Rc::new(RefCell::new(env)));
         evaluator.eval(prog)
     }
 
@@ -451,7 +565,7 @@ mod test {
 
         for input in inputs {
             match test_eval(input).unwrap() {
-                Object::Error(EvalError::TypeError(_)) => {},
+                Object::Error(EvalError::TypeError(_)) => {}
                 _ => assert!(false),
             }
         }
@@ -472,7 +586,6 @@ mod test {
         }
     }
 
-
     #[test]
     fn return_statement() {
         let expected = vec![
@@ -484,6 +597,36 @@ mod test {
         for (input, expected) in expected {
             let evaluated = test_eval(input);
             assert_eq!(evaluated, Some(expected));
+        }
+    }
+
+    #[test]
+    fn function() {
+        let evaluated = test_eval("fn(x) {x+2}");
+
+        if let Some(Object::Func(params, statements, _)) = evaluated {
+            assert_eq!(params.len(), 1);
+            assert_eq!(params.iter().map(|i| format!("{}", i)).collect::<Vec<String>>().join(", "), "x");
+            assert_eq!(statements.iter().map(|s| format!("{}", s)).collect::<Vec<String>>().join(""), "(x + 2)");
+        } else {
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn apply_func() {
+        let test_data = vec![
+            ("let identity = fn(x) { x; }; identity(5);", 5_i64),
+            ("let identity = fn(x) { return x; }; identity(5);", 5),
+            ("let double = fn(x) { x * 2; }; double(5);", 10),
+            ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+            ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+            ("fn(x) { x; }(5)", 5),
+        ];
+
+        for (input, expected) in test_data {
+            let evaluated = test_eval(input);
+            assert_eq!(evaluated, Some(Object::Int(expected)))
         }
     }
 }

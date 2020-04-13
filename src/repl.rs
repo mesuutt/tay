@@ -3,11 +3,13 @@ use crate::parser::Parser;
 use crate::evaluator::{Evaluator, Env};
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 
 pub fn start() {
     let env = Env::new();
-    let mut evaluator = Evaluator::new(env);
+    let mut evaluator = Evaluator::new(Rc::new(RefCell::new(env)));
     let mut rl = Editor::<()>::new();
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
