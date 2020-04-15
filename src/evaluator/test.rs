@@ -3,7 +3,7 @@ mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::evaluator::Env;
-    use crate::evaluator::{Evaluator, Object};
+    use super::super::{Evaluator, Object};
     use crate::evaluator::error::EvalErrorKind;
     use crate::ast;
     use crate::ast::BlockStatement;
@@ -117,6 +117,26 @@ mod test {
         for (input, expected) in test_data {
             let evaluated = test_eval(input);
             assert_eq!(evaluated, Some(Object::Int(expected)))
+        }
+    }
+
+
+
+    #[test]
+    fn if_else() {
+        let test_data = vec![
+            ("if (true) { 10 }", Some(Object::Int(10))),
+            ("if (false) { 10 }", Some(Object::Null)),
+            ("if (1) { 10 }", Some(Object::Int(10))),
+            ("if (1 < 2) { 10 }", Some(Object::Int(10))),
+            ("if (1 > 2) { 10 }", Some(Object::Null)),
+            ("if (1 > 2) { 10 } else { 20 }", Some(Object::Int(20))),
+            ("if (1 < 2) { 10 } else { 20 }", Some(Object::Int(10))),
+        ];
+
+        for (input, expected) in test_data {
+            let evaluated = test_eval(input);
+            assert_eq!(evaluated, expected)
         }
     }
 }

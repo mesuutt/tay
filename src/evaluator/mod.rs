@@ -9,7 +9,7 @@ pub use env::Env;
 use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalErrorKind;
-use crate::ast::{FloatSize, Expression};
+use crate::ast::{FloatSize, Expression, BlockStatement};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -69,7 +69,7 @@ impl Evaluator {
                 if let Some(right) = self.eval_expr(&*expr) {
                     Some(self.eval_prefix_expr(operator, right))
                 } else {
-                    None
+                    None // FIXME: we should return error. So we can use Result instead Option
                 }
             }
             ast::Expression::Infix(operator, left_expr, right_expr) => {
@@ -87,9 +87,30 @@ impl Evaluator {
             ast::Expression::Call { func, args } => {
                 Some(self.eval_call_expr(func, args))
             }
-            _ => None
+            ast::Expression::If { condition, consequence, alternative } => {
+                self.eval_if_expression(condition, consequence, alternative)
+            }
+            _ => unreachable!()
         }
     }
+
+    fn eval_if_expression(&mut self, cond: &Expression, consequence: &BlockStatement, alternative: &Option<BlockStatement>) -> Option<Object> {
+        let cond = match self.eval_expr(cond) {
+            Some(expr) => expr,
+
+            // FIXME: should be removed after eval_expr return Result instead option
+            None => return Some(Object::Error(EvalErrorKind::EvaluationError("if condition evaluation error".to_owned())))
+        };
+
+        if Self::is_truthy(&cond) {
+            self.eval_block_statement(consequence)
+        } else if let  Some(alt) = alternative {
+            self.eval_block_statement(alt.as_ref())
+        } else {
+            Some(Object::Null)
+        }
+    }
+
 
     fn eval_call_expr(&mut self, func_expr: &Expression, call_with_args: &[Expression]) -> Object {
         let args = match self.eval_expressions(call_with_args) {
@@ -471,6 +492,15 @@ impl Evaluator {
         match obj {
             Object::Error(_) => true,
             _ => false
+        }
+    }
+
+    fn is_truthy(obj: &Object) -> bool {
+        match obj {
+            Object::Null => false,
+            Object::Bool(false) => false,
+            Object::Bool(true) => true,
+            _ => true // other expressions. Maybe we dont allow this in the future: if (1){...}
         }
     }
 

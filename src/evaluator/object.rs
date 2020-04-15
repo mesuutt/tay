@@ -13,6 +13,11 @@ pub enum Object {
     Error(EvalErrorKind),
     Return(Box<Object>),
     Func(/*params*/Vec<Ident>, BlockStatement, Rc<RefCell<Env>>),
+
+    // falsy if expr conditions and assigning variables returns NULL
+    // if (1>2) {10} => NULL
+    // a = 12 => NULL
+    Null,
 }
 
 impl fmt::Display for Object {
@@ -26,9 +31,10 @@ impl fmt::Display for Object {
                 let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
                 //write!(f, "{}", "func fixme")
-            },
+            }
             Object::Return(x) => write!(f, "{}", x),
             Object::Error(err) => write!(f, "{}", err),
+            Object::Null => write!(f, "null"),
         }
     }
 }
