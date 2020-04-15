@@ -3,6 +3,7 @@ pub mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix, BlockStatement};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn let_statement() {

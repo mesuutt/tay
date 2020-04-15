@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test {
     use crate::lexer::Lexer;
@@ -10,6 +9,7 @@ mod test {
     use crate::ast::BlockStatement;
     use std::rc::Rc;
     use std::cell::RefCell;
+    use pretty_assertions::assert_eq;
 
     fn test_eval(input: &str) -> Option<Object> {
         let prog = Parser::new(Lexer::new(input)).parse();

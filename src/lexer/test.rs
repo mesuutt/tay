@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::lexer::{Token, Lexer};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn read_char() {
@@ -129,7 +130,7 @@ let b = bar;
         for i in expected {
             assert_eq!((lex.ch, lex.row, lex.col), i);
             // println!("{:?}", (lex.ch, lex.row, lex.col));
-            let t = lex.next_token();
+            lex.next_token();
         }
     }
 }
