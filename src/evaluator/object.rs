@@ -34,7 +34,7 @@ impl fmt::Display for Object {
             }
             Object::Return(x) => write!(f, "{}", x),
             Object::Error(err) => write!(f, "{}", err),
-            Object::Null => write!(f, "null"),
+            Object::Null => write!(f, ""),
         }
     }
 }
