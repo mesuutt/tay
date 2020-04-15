@@ -8,7 +8,7 @@ mod test;
 pub use env::Env;
 use object::Object;
 use crate::ast;
-use crate::evaluator::error::EvalError;
+use crate::evaluator::error::EvalErrorKind;
 use crate::ast::{FloatSize, Expression};
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -100,7 +100,7 @@ impl Evaluator {
                 object_list
             }
             None => {
-                return Object::Error(EvalError::EvaluationError("call exprresion cannot evaluated".to_owned()));
+                return Object::Error(EvalErrorKind::EvaluationError("call expression cannot evaluated".to_owned()));
             }
         };
 
@@ -108,7 +108,7 @@ impl Evaluator {
         match &func_obj {
             Some(Object::Func(params, _body, _env)) => {
                 if params.len() != call_with_args.len() {
-                    return Object::Error(EvalError::EvaluationError(format!("'{}' function takes {} positional arguments but {} were given", func_expr, params.len(), call_with_args.len())));
+                    return Object::Error(EvalErrorKind::EvaluationError(format!("'{}' function takes {} positional arguments but {} were given", func_expr, params.len(), call_with_args.len())));
                 }
             }
             Some(Object::Error(e)) => return Object::Error(e.to_owned()),
@@ -131,7 +131,7 @@ impl Evaluator {
                     expr
                 }
                 None => {
-                    result.push(Object::Error(EvalError::EvaluationError(format!("{} cannot evaluated", e))));
+                    result.push(Object::Error(EvalErrorKind::EvaluationError(format!("{} cannot evaluated", e))));
                     return Some(result);
                 }
             };
@@ -155,7 +155,7 @@ impl Evaluator {
         // If we use borrow() instead borrow_mut() value removing after return.
         match self.env.borrow_mut().get(&name) {
             Some(val) => val,
-            None => Object::Error(EvalError::UndefinedIdent(name.clone()))
+            None => Object::Error(EvalErrorKind::UndefinedIdent(name.clone()))
         }
     }
 
@@ -187,7 +187,7 @@ impl Evaluator {
     fn eval_minus_prefix_operator_expr(&self, right: Object) -> Object {
         match right {
             Object::Int(x) => Object::Int(-x),
-            _ => Object::Error(EvalError::TypeError(format!("unknown operator: '-{}'", right)))
+            _ => Object::Error(EvalErrorKind::TypeError(format!("unknown operator: '-{}'", right)))
         }
     }
 
@@ -206,7 +206,7 @@ impl Evaluator {
             ast::Infix::Mul => Object::Int(left_val * right_val),
             ast::Infix::Div => {
                 if right_val == 0 {
-                    return Object::Error(EvalError::DivideByZero);
+                    return Object::Error(EvalErrorKind::DivideByZero);
                 }
                 Object::Int(left_val / right_val)
             }
@@ -214,7 +214,7 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
                 if is_overflow {
-                    Object::Error(EvalError::ExponentTooLarge)
+                    Object::Error(EvalErrorKind::ExponentTooLarge)
                 } else {
                     Object::Int(num as i64)
                 }
@@ -271,7 +271,7 @@ impl Evaluator {
             ast::Infix::Mul => Object::Float(left_val * right_val),
             ast::Infix::Div => {
                 if right_val == 0.0 {
-                    return Object::Error(EvalError::DivideByZero);
+                    return Object::Error(EvalErrorKind::DivideByZero);
                 }
                 Object::Float(left_val / right_val)
             }
@@ -335,7 +335,7 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 // let num = left_val.powi(right_val as i32);
                 // Ok(Object::Float(num))
-                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'float' and 'int'".to_owned()))
+                Object::Error(EvalErrorKind::TypeError("unsupported operand types for ^: 'float' and 'int'".to_owned()))
             }
             ast::Infix::Lt => {
                 if left_val < (right_val as FloatSize) {
@@ -392,7 +392,7 @@ impl Evaluator {
             ast::Infix::Exponent => {
                 // let num = left_val.pow(right_val as u32);
                 // Ok(Object::Float(num as ast::FloatSize))
-                Object::Error(EvalError::TypeError("unsupported operand types for ^: 'int' and 'float'".to_owned()))
+                Object::Error(EvalErrorKind::TypeError("unsupported operand types for ^: 'int' and 'float'".to_owned()))
             }
             ast::Infix::Lt => {
                 if (left_val as FloatSize) < right_val {
@@ -486,13 +486,13 @@ impl Evaluator {
             let obj = match self.eval_block_statement(body) {
                 Some(Object::Return(obj)) => *obj,
                 Some(o) => o, // Evaluated expression result without return statement.
-                None => Object::Error(EvalError::EvaluationError("apply func error".to_owned()))
+                None => Object::Error(EvalErrorKind::EvaluationError("apply func error".to_owned()))
             };
             self.env = current_env;
 
             obj
         } else {
-            Object::Error(EvalError::EvaluationError("invalid func literal".to_owned()))
+            Object::Error(EvalErrorKind::EvaluationError("invalid func literal".to_owned()))
         }
     }
 

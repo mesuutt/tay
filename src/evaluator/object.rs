@@ -1,6 +1,6 @@
 use std::fmt;
 use crate::ast::{IntegerSize, FloatSize, Ident, BlockStatement};
-use crate::evaluator::error::EvalError;
+use crate::evaluator::error::EvalErrorKind;
 use crate::evaluator::Env;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -10,7 +10,7 @@ pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
     Bool(bool),
-    Error(EvalError),
+    Error(EvalErrorKind),
     Return(Box<Object>),
     Func(/*params*/Vec<Ident>, BlockStatement, Rc<RefCell<Env>>),
 }

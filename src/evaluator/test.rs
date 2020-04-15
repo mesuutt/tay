@@ -5,7 +5,7 @@ mod test {
     use crate::parser::Parser;
     use crate::evaluator::Env;
     use crate::evaluator::{Evaluator, Object};
-    use crate::evaluator::error::EvalError;
+    use crate::evaluator::error::EvalErrorKind;
     use crate::ast;
     use crate::ast::BlockStatement;
     use std::rc::Rc;
@@ -55,7 +55,7 @@ mod test {
 
         for input in inputs {
             match test_eval(input).unwrap() {
-                Object::Error(EvalError::TypeError(_)) => {}
+                Object::Error(EvalErrorKind::TypeError(_)) => {}
                 _ => assert!(false),
             }
         }
