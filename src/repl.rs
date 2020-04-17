@@ -5,24 +5,37 @@ use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::env;
 
+const PROMPT: &str = ">> ";
 
 pub fn start() {
-    let env = Env::new();
-    let mut evaluator = Evaluator::new(Rc::new(RefCell::new(env)));
-    let mut rl = Editor::<()>::new();
-    if rl.load_history("history.txt").is_err() {
-        println!("No previous history.");
-    }
+    let history_file_name = ".tay_history";
+    println!(
+        r#"
+      ./|,,/|
+     <   o o)  {name}
+    <\ (    |  =======
+   <\\  |\  |  Version: {version}
+  <\\\  |(__)  History: ~/{history}
+ <\\\\  |
+"#,
+        name = env!("CARGO_PKG_NAME"),
+        version = env!("CARGO_PKG_VERSION"),
+        history = history_file_name,
+    );
 
+    let mut rl = Editor::<()>::new();
+    let history_path = format!("{}/{}", env::var("HOME").unwrap(), history_file_name);
+    if rl.load_history(&history_path).is_err() {}
+
+    let mut evaluator = Evaluator::new(Rc::new(RefCell::new(Env::new())));
     loop {
-        let readline = rl.readline(">> ");
+        let readline = rl.readline(PROMPT);
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
-                let lexer = Lexer::new(line.as_str());
-                let mut p = Parser::new(lexer);
-                let program = p.parse();
+                let program = Parser::new(Lexer::new(line.as_str())).parse();
                 if !program.errors.is_empty() {
                     for err in program.errors.iter() {
                         println!("Parse error: {}", err);
@@ -32,23 +45,24 @@ pub fn start() {
                 match evaluator.eval(program) {
                     Some(obj) => {
                         println!("{}", obj)
-                    },
+                    }
                     None => continue
                 }
-            },
+            }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
-                break
-            },
+                break;
+            }
             Err(ReadlineError::Eof) => {
                 println!("CTRL-D");
-                break
-            },
+                break;
+            }
             Err(err) => {
                 println!("Error: {:?}", err);
-                break
+                break;
             }
         }
     }
-    rl.save_history("history.txt").unwrap();
+
+    rl.save_history(&history_path).unwrap();
 }
