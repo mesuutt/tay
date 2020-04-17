@@ -20,7 +20,10 @@ impl Env {
     pub fn get(&self, key: &str) -> Option<Object> {
         match self.store.get(key) {
             Some(obj) => Some(obj.clone()),
-            None => None
+            None => match self.outer {
+                Some(ref outer) => outer.borrow_mut().get(key),
+                None => None,
+            },
         }
     }
 
