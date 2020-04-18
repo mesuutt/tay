@@ -9,6 +9,7 @@ use std::cell::RefCell;
 pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
+    String(String),
     Bool(bool),
     Error(EvalErrorKind),
     Return(Box<Object>),
@@ -25,6 +26,7 @@ impl fmt::Display for Object {
         match self {
             Object::Int(x) => write!(f, "{}", x),
             Object::Float(x) => write!(f, "{}", x),
+            Object::String(x) => write!(f, "{}", x),
             Object::Bool(x) => write!(f, "{}", x),
             Object::Func(params, body, _) => {
                 let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();

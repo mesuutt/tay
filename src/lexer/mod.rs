@@ -79,7 +79,7 @@ impl<'a> Lexer<'a> {
                 } else {
                     token = Token::Bang
                 }
-            },
+            }
             '>' => {
                 if self.next_ch_is('=') {
                     self.read_char();
@@ -95,6 +95,9 @@ impl<'a> Lexer<'a> {
                 } else {
                     token = Token::Lt
                 }
+            }
+            '"' => {
+                token = Token::String(self.read_string())
             }
             _ => {
                 if self.ch.is_ascii_alphabetic() {
@@ -114,6 +117,18 @@ impl<'a> Lexer<'a> {
         }
         self.read_char();
         token
+    }
+
+    fn read_string(&mut self) -> String {
+        self.read_char(); // Skip "
+        let pos = self.position;
+        loop {
+            if self.ch == '"' || self.ch == '\0'  {
+                break;
+            }
+            self.read_char();
+        }
+        self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
     }
 
     fn read_identifier(&mut self) -> String {
@@ -149,9 +164,10 @@ impl<'a> Lexer<'a> {
 
     fn next_ch(&self) -> char {
         if let Some(ch) = self.input.chars().nth(self.read_position) {
-            return ch
+            return ch;
         }
-        return '\0'
+
+        '\0'
     }
 
     fn next_ch_is(&self, ch: char) -> bool {

@@ -162,6 +162,7 @@ impl fmt::Display for Statement {
 pub enum Literal {
     Int(IntegerSize),
     Float(FloatSize),
+    String(String),
     Bool(bool),
 }
 
@@ -171,6 +172,7 @@ impl fmt::Display for Literal {
         match self {
             Literal::Int(x) => write!(f, "{}", x),
             Literal::Float(x) => write!(f, "{}", x),
+            Literal::String(x) => write!(f, "{}", x),
             Literal::Bool(x) => write!(f, "{}", x),
         }
     }

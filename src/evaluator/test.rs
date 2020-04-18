@@ -120,8 +120,6 @@ mod test {
         }
     }
 
-
-
     #[test]
     fn if_else() {
         let test_data = vec![
@@ -132,6 +130,19 @@ mod test {
             ("if (1 > 2) { 10 }", Some(Object::Null)),
             ("if (1 > 2) { 10 } else { 20 }", Some(Object::Int(20))),
             ("if (1 < 2) { 10 } else { 20 }", Some(Object::Int(10))),
+        ];
+
+        for (input, expected) in test_data {
+            let evaluated = test_eval(input);
+            assert_eq!(evaluated, expected)
+        }
+    }
+
+    #[test]
+    fn string_literal() {
+        let test_data = vec![
+            (r#""hello world""#, Some(Object::String("hello world".to_owned()))),
+            (r#""hello" + " " +  "world" "#, Some(Object::String("hello world".to_owned()))),
         ];
 
         for (input, expected) in test_data {

@@ -167,6 +167,7 @@ impl<'a> Parser<'a> {
         // we don't have infix/prefix functions, instead calling related fn with pattern matching
         let mut left = match self.current_token {
             Token::Ident(_) => self.parse_ident_expr(),
+            Token::String(_) => self.parse_string_literal(),
             Token::Int(_) => self.parse_integer_literal(),
             Token::Float(_) => self.parse_float_literal(),
             Token::Bool(_) => self.parse_boolean(),
@@ -222,6 +223,13 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_string_literal(&self) -> Result<Expression, ParseError> {
+        match &self.current_token {
+            Token::String(literal) => Ok(Expression::Literal(Literal::String(literal.clone()))),
+            _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
+        }
+    }
+
     fn parse_integer_literal(&mut self) -> Result<Expression, ParseError> {
         match &self.current_token {
             Token::Int(literal) => {
@@ -230,7 +238,7 @@ impl<'a> Parser<'a> {
                     Err(_) => Err(ParseError::InvalidSyntax(literal.clone()))
                 }
             }
-            _ => Err(ParseError::InvalidToken(self.current_token.clone()))
+            _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
         }
     }
 
@@ -242,14 +250,14 @@ impl<'a> Parser<'a> {
                     Err(_) => Err(ParseError::InvalidSyntax(literal.clone()))
                 }
             }
-            _ => Err(ParseError::InvalidToken(self.current_token.clone()))
+            _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
         }
     }
 
     fn parse_boolean(&self) -> Result<Expression, ParseError> {
         match self.current_token {
             Token::Bool(x) => Ok(Expression::Literal(Literal::Bool(x))),
-            _ => Err(ParseError::InvalidToken(self.current_token.clone()))
+            _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
         }
     }
 

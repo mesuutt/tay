@@ -15,7 +15,7 @@ mod test {
 
     #[test]
     fn tokens() {
-        let input = "let five = 5;
+        let input = r#"let five = 5;
 let ten = 10 ^ 2 % 4;
 
 let add = fn(x, y) {
@@ -26,7 +26,9 @@ let result = add(five, ten);
 my_float = 1.2;
 
 < <= == != > >=
-";
+"foo"
+"foo bar"
+"#;
         let expected = vec![
             Token::Let,
             Token::Ident(String::from("five")),
@@ -78,6 +80,8 @@ my_float = 1.2;
             Token::NotEq,
             Token::Gt,
             Token::Gte,
+            Token::String(String::from("foo")),
+            Token::String(String::from("foo bar")),
             Token::EndOfFile,
         ];
 

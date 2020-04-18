@@ -104,7 +104,7 @@ impl Evaluator {
 
         if Self::is_truthy(&cond) {
             self.eval_block_statement(consequence)
-        } else if let  Some(alt) = alternative {
+        } else if let Some(alt) = alternative {
             self.eval_block_statement(alt.as_ref())
         } else {
             Some(Object::Null)
@@ -167,6 +167,7 @@ impl Evaluator {
             ast::Literal::Int(x) => Object::Int(*x),
             ast::Literal::Float(x) => Object::Float(*x),
             ast::Literal::Bool(x) => Object::Bool(*x),
+            ast::Literal::String(x) => Object::String(x.clone()),
         }
     }
 
@@ -201,7 +202,10 @@ impl Evaluator {
             (Object::Int(x), Object::Float(y)) => {
                 Some(self.eval_int_with_float_infix_expr(operator, x, y))
             }
-            _ => None
+            (Object::String(x), Object::String(y)) => {
+                Some(self.eval_string_infix_expr(operator, &x, &y))
+            }
+            (left, right) => Some(Object::Error(EvalErrorKind::EvaluationError(format!("type mismatch: {} {} {}", left, operator, right))))
         }
     }
 
@@ -457,6 +461,17 @@ impl Evaluator {
                     Object::Bool(false)
                 }
             }
+        }
+    }
+
+    fn eval_string_infix_expr(&self, operator: &ast::Infix, left_val: &str, right_val: &str) -> Object {
+        match operator {
+            ast::Infix::Plus => {
+                let mut s = left_val.to_owned();
+                s.push_str(&right_val.to_owned());
+                Object::String(s)
+            },
+            op => Object::Error(EvalErrorKind::EvaluationError(format!("unknown operator for string: {}", op)))
         }
     }
 

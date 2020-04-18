@@ -154,6 +154,16 @@ pub mod test {
         assert_eq!(program.statements, expected);
     }
 
+
+    #[test]
+    fn string_literal() {
+        let program = Parser::new(Lexer::new(r#""hello world""#)).parse();
+        let expected = vec![
+            Statement::Expression( Expression::Literal(Literal::String(String::from("hello world")))),
+        ];
+        assert_eq!(program.statements, expected);
+    }
+
     #[test]
     fn operator_precedence() {
         let data = vec![
