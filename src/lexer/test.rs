@@ -29,7 +29,8 @@ my_float = 1.2;
 "foo"
 "foo bar"
 let a = "hello";
-// my comment
+// comment 1
+/* comment 2 */
 "#;
         let expected = vec![
             Token::Let,

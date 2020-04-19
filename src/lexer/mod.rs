@@ -59,6 +59,9 @@ impl<'a> Lexer<'a> {
             '/' => if self.next_ch_is('/') {
                 self.eat_line();
                 return self.next_token();
+            } else if self.next_ch_is('*') {
+                self.eat_comment();
+                return self.next_token();
             } else {
                 token = Token::Slash
             }
@@ -175,7 +178,23 @@ impl<'a> Lexer<'a> {
 
         self.row += 1;
     }
-    
+
+    fn eat_comment(&mut self) {
+        loop {
+            if self.ch == '\n' || self.ch == '\r' {
+                self.row += 1;
+                self.col = 0;
+            }
+            self.read_char();
+
+            if self.ch == '*' && self.next_ch_is('/') {
+                self.read_char();
+                self.read_char();
+                break;
+            }
+        }
+    }
+
     fn next_ch(&self) -> char {
         if let Some(ch) = self.input.chars().nth(self.read_position) {
             return ch;
