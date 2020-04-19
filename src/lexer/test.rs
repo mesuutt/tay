@@ -122,8 +122,7 @@ let a = "hello";
         let input = r#"
 let a = foo;
 let b = bar;
-// my comment
-"#;
+// my comment"#;
         let expected = vec![
             ('\n', 0, 1),
             (' ', 1, 4),
@@ -136,7 +135,7 @@ let b = bar;
             (' ', 2, 8),
             (';', 2, 12),
             ('\n', 2, 13),
-            ('\0', 5, 2),
+            ('\0', 3, 14),
         ];
 
         let mut lex = Lexer::new(input);
@@ -146,4 +145,42 @@ let b = bar;
             lex.next_token();
         }
     }
+
+    #[test]
+    fn span_slice() {
+        let input = r#"foo
+// comment
+let
+"#;
+        let expected = vec![
+            ("foo", 0..3),
+            ("let", 15..18)
+        ];
+
+        let mut lex = Lexer::new(input);
+        for (slice, span) in expected {
+            lex.next_token();
+            assert_eq!(lex.span(), span);
+            assert_eq!(lex.slice(), slice);
+        }
+    }
+
+    #[test]
+    fn line_slice() {
+        let input = r#"123456789
+// comment
+"hello world!"
+"#;
+        let expected = vec![
+            (0..15, "123456789"),
+            (0..12, r#""hello world!""#)
+        ];
+
+        let mut lex = Lexer::new(input);
+        for (_span, slice) in expected {
+            lex.next_token();
+            assert_eq!(lex.line_slice(), slice)
+        }
+    }
+
 }

@@ -5,6 +5,8 @@ mod test;
 pub use token::Token;
 use token::lookup_ident;
 
+pub type Span = core::ops::Range<usize>;
+
 pub struct Lexer<'a> {
     input: &'a str,
     position: usize,
@@ -13,6 +15,9 @@ pub struct Lexer<'a> {
     ch: char,
     line: usize,
     col: usize,
+    line_start: usize,
+    token_start: usize,
+    token_end: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -25,9 +30,50 @@ impl<'a> Lexer<'a> {
             ch: '0',
             line: 0,
             col: 0,
+            token_start: 0,
+            token_end: 0,
+            line_start: 0,
         };
         lexer.read_char(); // initialize l.ch, l.position and l.read_position
         lexer
+    }
+
+
+    // Get the range for the current token
+    pub fn span(&self) -> Span {
+        self.token_start..self.token_end
+    }
+
+    // Get string slice of current token
+    pub fn slice(&self) -> String {
+        self.input.chars().skip(self.token_start).take(self.token_end - self.token_start).collect::<String>()
+    }
+
+    // get string slice of current line
+    pub fn line_slice(&self) -> String {
+        self.input.chars().skip(self.line_start).take(self.line_end() - self.line_start).collect::<String>()
+    }
+
+    // get the range for current line
+    pub fn line_span(&self) -> Span {
+        self.line_start..self.line_end()
+    }
+
+    // find line ending position
+    fn line_end(&self) -> usize {
+        let mut i = 0;
+        loop {
+            if let Some(ch) = self.input.chars().skip(self.position).nth(i) {
+                if ch == '\n' {
+                    return self.line_start + i;
+                }
+                i += 1;
+                continue;
+            }
+
+            // EOF
+            return self.position + i;
+        }
     }
 
     fn read_char(&mut self) {
@@ -42,15 +88,20 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn next_token(&mut self) -> Token {
+        self.skip_whitespace();
+        self.token_start = self.position;
+        let token = self.read_token();
+        self.token_end = self.position;
+        token
+    }
+
+    fn read_token(&mut self) -> Token {
         // if this fn called after already EOF, do not continue anymore.
         if self.position == self.input_len {
             return Token::EndOfFile;
         }
 
         let token: Token;
-
-        self.skip_whitespace();
-
         match self.ch {
             '\0' => token = Token::EndOfFile,
             '-' => token = Token::Minus,
@@ -124,6 +175,7 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
+
         self.read_char();
         token
     }
@@ -164,29 +216,37 @@ impl<'a> Lexer<'a> {
     fn skip_whitespace(&mut self) {
         while self.ch.is_whitespace() {
             if self.ch == '\n' || self.ch == '\r' {
-                self.line += 1;
-                self.col = 0;
+                self.new_line()
             }
             self.read_char()
         }
     }
 
+    // set next line positioning
+    fn new_line(&mut self) {
+        self.line_start = self.read_position;
+        self.line += 1;
+        self.col = 0;
+    }
+
     fn skip_line(&mut self) {
-        while self.ch != '\n' {
+        while self.ch != '\n' && self.ch != '\0' {
             self.read_char();
         }
 
-        self.line += 1;
+        if self.ch != '\0' {
+            self.line += 1;
+        }
+        self.line_start = self.read_position;
     }
 
     fn skip_multi_line_comment(&mut self) {
         loop {
             if self.ch == '\n' || self.ch == '\r' {
-                self.line += 1;
-                self.col = 0;
+                self.new_line();
             }
-            self.read_char();
 
+            self.read_char();
             if self.ch == '*' && self.next_ch_is('/') {
                 self.read_char();
                 self.read_char();
