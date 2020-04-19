@@ -11,8 +11,8 @@ pub struct Lexer<'a> {
     read_position: usize,
     input_len: usize,
     ch: char,
-    pub row: usize,
-    pub col: usize,
+    line: usize,
+    col: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -23,7 +23,7 @@ impl<'a> Lexer<'a> {
             read_position: 0,
             input_len: input.len(),
             ch: '0',
-            row: 0,
+            line: 0,
             col: 0,
         };
         lexer.read_char(); // initialize l.ch, l.position and l.read_position
@@ -57,10 +57,10 @@ impl<'a> Lexer<'a> {
             '+' => token = Token::Plus,
             '*' => token = Token::Asterisk,
             '/' => if self.next_ch_is('/') {
-                self.eat_line();
+                self.skip_line();
                 return self.next_token();
             } else if self.next_ch_is('*') {
-                self.eat_comment();
+                self.skip_multi_line_comment();
                 return self.next_token();
             } else {
                 token = Token::Slash
@@ -164,25 +164,25 @@ impl<'a> Lexer<'a> {
     fn skip_whitespace(&mut self) {
         while self.ch.is_whitespace() {
             if self.ch == '\n' || self.ch == '\r' {
-                self.row += 1;
+                self.line += 1;
                 self.col = 0;
             }
             self.read_char()
         }
     }
 
-    fn eat_line(&mut self) {
+    fn skip_line(&mut self) {
         while self.ch != '\n' {
             self.read_char();
         }
 
-        self.row += 1;
+        self.line += 1;
     }
 
-    fn eat_comment(&mut self) {
+    fn skip_multi_line_comment(&mut self) {
         loop {
             if self.ch == '\n' || self.ch == '\r' {
-                self.row += 1;
+                self.line += 1;
                 self.col = 0;
             }
             self.read_char();

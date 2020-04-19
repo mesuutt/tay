@@ -141,7 +141,7 @@ let b = bar;
 
         let mut lex = Lexer::new(input);
         for i in expected {
-            assert_eq!((lex.ch, lex.row, lex.col), i);
+            assert_eq!((lex.ch, lex.line, lex.col), i);
             // println!("{:?}", (lex.ch, lex.row, lex.col));
             lex.next_token();
         }
