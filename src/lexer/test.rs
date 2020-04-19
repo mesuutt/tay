@@ -28,6 +28,7 @@ my_float = 1.2;
 < <= == != > >=
 "foo"
 "foo bar"
+let a = "hello";
 "#;
         let expected = vec![
             Token::Let,
@@ -82,6 +83,11 @@ my_float = 1.2;
             Token::Gte,
             Token::String(String::from("foo")),
             Token::String(String::from("foo bar")),
+            Token::Let,
+            Token::Ident(String::from("a")),
+            Token::Assign,
+            Token::String(String::from("hello")),
+            Token::Semicolon,
             Token::EndOfFile,
         ];
 

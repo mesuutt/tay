@@ -11,19 +11,22 @@ pub mod test {
         let x = 5;
         let y = 10;
         let z = 1.2;
+        let foo = "hello";
         "#;
 
         let mut p = Parser::new(Lexer::new(input));
         let prog = p.parse();
-        assert_eq!(prog.statements.len(), 3);
+        assert_eq!(prog.statements.len(), 4);
         assert_eq!(prog.errors.len(), 0);
 
         assert_eq!(prog.statements, vec![
             Statement::Let(Ident(String::from("x")), Expression::Literal(Literal::Int(5))),
             Statement::Let(Ident(String::from("y")), Expression::Literal(Literal::Int(10))),
             Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Float(1.2))),
+            Statement::Let(Ident(String::from("foo")), Expression::Literal(Literal::String("hello".to_owned()))),
         ]);
     }
+
 
     #[test]
     fn return_statement() {

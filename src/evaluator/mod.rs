@@ -471,7 +471,13 @@ impl Evaluator {
                 s.push_str(&right_val.to_owned());
                 Object::String(s)
             },
-            op => Object::Error(EvalErrorKind::EvaluationError(format!("unknown operator for string: {}", op)))
+            ast::Infix::Eq => {
+                Object::Bool(left_val == right_val)
+            }
+            ast::Infix::NotEq => {
+                Object::Bool(left_val != right_val)
+            }
+            op => Object::Error(EvalErrorKind::EvaluationError(format!("unsupported infix operator for string: {}", op)))
         }
     }
 
