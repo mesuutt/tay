@@ -29,6 +29,7 @@ my_float = 1.2;
 "foo"
 "foo bar"
 let a = "hello";
+// my comment
 "#;
         let expected = vec![
             Token::Let,
@@ -120,6 +121,7 @@ let a = "hello";
         let input = r#"
 let a = foo;
 let b = bar;
+// my comment
 "#;
         let expected = vec![
             ('\n', 0, 1),
@@ -133,7 +135,7 @@ let b = bar;
             (' ', 2, 8),
             (';', 2, 12),
             ('\n', 2, 13),
-            ('\0', 3, 2),
+            ('\0', 5, 2),
         ];
 
         let mut lex = Lexer::new(input);

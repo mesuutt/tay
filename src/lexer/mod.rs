@@ -48,6 +48,7 @@ impl<'a> Lexer<'a> {
         }
 
         let token: Token;
+
         self.skip_whitespace();
 
         match self.ch {
@@ -55,7 +56,12 @@ impl<'a> Lexer<'a> {
             '-' => token = Token::Minus,
             '+' => token = Token::Plus,
             '*' => token = Token::Asterisk,
-            '/' => token = Token::Slash,
+            '/' => if self.next_ch_is('/') {
+                self.eat_line();
+                return self.next_token();
+            } else {
+                token = Token::Slash
+            }
             '%' => token = Token::Percent,
             '^' => token = Token::Caret,
             ',' => token = Token::Comma,
@@ -123,7 +129,7 @@ impl<'a> Lexer<'a> {
         self.read_char(); // Skip "
         let pos = self.position;
         loop {
-            if self.ch == '"' || self.ch == '\0'  {
+            if self.ch == '"' || self.ch == '\0' {
                 break;
             }
             self.read_char();
@@ -162,6 +168,14 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    fn eat_line(&mut self) {
+        while self.ch != '\n' {
+            self.read_char();
+        }
+
+        self.row += 1;
+    }
+    
     fn next_ch(&self) -> char {
         if let Some(ch) = self.input.chars().nth(self.read_position) {
             return ch;
