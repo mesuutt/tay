@@ -550,7 +550,7 @@ impl Evaluator {
     fn extend_func_env(func: &Object, call_args: &[Object]) -> Env {
         // Add function parameters to env of function
         if let Object::Func(params, _, outer_env) = func {
-            let mut env = Env::new_with_outer(&outer_env);
+            let mut env = Env::extend(&outer_env);
 
             for (i, param) in params.iter().enumerate() {
                 env.set(param.0.clone(), call_args.get(i).unwrap())

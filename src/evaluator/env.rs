@@ -31,7 +31,7 @@ impl Env {
         self.store.insert(key, val.clone());
     }
 
-    pub fn new_with_outer(outer: &Rc<RefCell<Env>>) -> Self {
+    pub fn extend(outer: &Rc<RefCell<Env>>) -> Self {
         Env {
             store: HashMap::new(),
             outer: Some(outer.clone()),
