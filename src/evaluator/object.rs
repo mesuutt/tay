@@ -5,13 +5,14 @@ use crate::evaluator::Env;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub type EvalResult = Result<Object, EvalErrorKind>;
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum Object {
     Int(IntegerSize),
     Float(FloatSize),
     String(String),
     Bool(bool),
-    Error(EvalErrorKind),
     Return(Box<Object>),
     Func(/*params*/Vec<Ident>, BlockStatement, Rc<RefCell<Env>>),
 
@@ -31,12 +32,25 @@ impl fmt::Display for Object {
             Object::Func(params, body, _) => {
                 let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
-                //write!(f, "{}", "func fixme")
+                // write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
+                write!(f, "<fn({})>", param_list.join(", "))
             }
             Object::Return(x) => write!(f, "{}", x),
-            Object::Error(err) => write!(f, "{}", err),
             Object::Null => write!(f, ""),
+        }
+    }
+}
+
+impl Object {
+    pub fn type_name(&self) -> &str {
+        match self {
+            Object::String(_) => "STRING",
+            Object::Int(_) => "INT",
+            Object::Float(_) => "FLOAT",
+            Object::Bool(_) => "BOOL",
+            Object::Return(_) => "RETURN",
+            Object::Null => "NULL",
+            Object::Func(_, _, _) => "FUNC",
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::evaluator::{Evaluator, Env};
+use crate::evaluator::{eval, Env};
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
@@ -28,8 +28,8 @@ pub fn start() {
     let mut rl = Editor::<()>::new();
     let history_path = format!("{}/{}", env::var("HOME").unwrap(), history_file_name);
     if rl.load_history(&history_path).is_err() {}
+    let env= Rc::new(RefCell::new(Env::new()));
 
-    let mut evaluator = Evaluator::new(Rc::new(RefCell::new(Env::new())));
     loop {
         let readline = rl.readline(PROMPT);
         match readline {
@@ -42,11 +42,11 @@ pub fn start() {
                     };
                     continue;
                 }
-                match evaluator.eval(program) {
-                    Some(obj) => {
+                match eval(program, env.clone()) {
+                    Ok(obj) => {
                         println!("{}", obj)
                     }
-                    None => continue
+                    Err(e) => println!("ERROR: {}", e)
                 }
             }
             Err(ReadlineError::Interrupted) => {

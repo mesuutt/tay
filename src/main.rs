@@ -8,7 +8,7 @@ use std::{env, process};
 use std::fs::File;
 use std::io::Read;
 
-use crate::evaluator::{Env, Evaluator};
+use crate::evaluator::{Env, eval};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::lexer::Lexer;
@@ -38,7 +38,6 @@ fn eval_file(filename: &str)  {
     }
 
     let env = Env::new();
-    let mut evaluator = Evaluator::new(Rc::new(RefCell::new(env)));
     let program = Parser::new(Lexer::new(source.as_str())).parse();
     if !program.errors.is_empty() {
         for err in program.errors.iter() {
@@ -46,7 +45,8 @@ fn eval_file(filename: &str)  {
         };
     }
 
-    if let Some(obj) = evaluator.eval(program) {
-        println!("{}", obj)
+    match eval(program, Rc::new(RefCell::new(env))) {
+        Ok(obj) => println!("{}", obj),
+        Err(e) => println!("ERROR: {}", e)
     }
 }
