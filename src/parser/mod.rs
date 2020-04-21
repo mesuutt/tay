@@ -23,7 +23,7 @@ impl fmt::Display for ParseError {
 }
 
 
-type ParseResult<T> = std::result::Result<T, ParseError>;
+type ParseResult<T> = Result<T, ParseError>;
 type PrefixParseFn = fn(&mut Parser) -> ParseResult<Expression>;
 type InfixParseFn = fn(&mut Parser, Expression) -> ParseResult<Expression>;
 
@@ -48,8 +48,6 @@ impl Parser {
     }
 
     fn next_token(&mut self) {
-        // self.current_token = self.peek_token.clone();
-        // self.peek_token = self.lexer.next_token();
         self.current_token = mem::replace(&mut self.peek_token, self.lexer.next_token());
     }
 

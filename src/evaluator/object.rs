@@ -6,6 +6,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 pub type EvalResult = Result<Object, EvalErrorKind>;
+pub type BuiltinFunc = fn(Vec<Object>) -> EvalResult;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Object {
@@ -15,6 +16,7 @@ pub enum Object {
     Bool(bool),
     Return(Box<Object>),
     Func(/*params*/Vec<Ident>, BlockStatement, Rc<RefCell<Env>>),
+    Builtin(BuiltinFunc),
 
     // falsy if expr conditions and assigning variables returns NULL
     // if (1>2) {10} => NULL
@@ -35,6 +37,9 @@ impl fmt::Display for Object {
                 // write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
                 write!(f, "<fn({})>", param_list.join(", "))
             }
+            Object::Builtin(_func) => {
+                write!(f, "<builtin function>")
+            }
             Object::Return(x) => write!(f, "{}", x),
             Object::Null => write!(f, ""),
         }
@@ -45,12 +50,21 @@ impl Object {
     pub fn type_name(&self) -> &str {
         match self {
             Object::String(_) => "STRING",
-            Object::Int(_) => "INT",
+            Object::Int(_) => "INTEGER",
             Object::Float(_) => "FLOAT",
             Object::Bool(_) => "BOOL",
             Object::Return(_) => "RETURN",
             Object::Null => "NULL",
             Object::Func(_, _, _) => "FUNC",
+            Object::Builtin(_) => "BUILTIN",
         }
+    }
+}
+
+pub fn assert_argument_count(expected: usize, args: &[Object]) -> Result<(), EvalErrorKind> {
+    if args.len() != expected {
+        Err(EvalErrorKind::WrongArgumentCount(expected, args.len()))
+    } else {
+        Ok(())
     }
 }

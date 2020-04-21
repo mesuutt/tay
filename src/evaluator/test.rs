@@ -3,7 +3,7 @@ mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::evaluator::{Env, eval};
-    use super::super::{Object};
+    use super::super::Object;
     use crate::evaluator::error::EvalErrorKind;
     use std::rc::Rc;
     use std::cell::RefCell;
@@ -147,6 +147,44 @@ mod test {
         for (input, expected) in test_data {
             let evaluated = test_eval(input);
             assert_eq!(evaluated, Ok(expected))
+        }
+    }
+
+    #[test]
+    fn builtins() {
+        expect_values(vec![
+            (r#"len("")"#, "0"),
+            (r#"len("four")"#, "4"),
+        ]);
+        expect_error(vec![
+            ("len(1)", "unsupported argument to len: INTEGER"),
+            (r#"len("one", "two")"#, "wrong number of arguments, want=1, got=2"),
+        ]);
+    }
+
+    fn expect_values(tests: Vec<(&str, &str)>) {
+        for (input, expected) in tests {
+            match test_eval(input) {
+                Ok(obj) => {
+                    assert_eq!(obj.to_string(), expected)
+                }
+                Err(e) => {
+                    panic!("expected `{}`, but got error: `{}`", expected, e.to_string())
+                }
+            }
+        }
+    }
+
+    fn expect_error(tests: Vec<(&str, &str)>) {
+        for (input, expected) in tests {
+            match test_eval(input) {
+                Ok(obj) => {
+                    panic!("expected error `{}`, but got object: `{}`", expected, obj.to_string())
+                }
+                Err(e) => {
+                    assert_eq!(e.to_string(), expected)
+                }
+            }
         }
     }
 }

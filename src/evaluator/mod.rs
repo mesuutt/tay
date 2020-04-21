@@ -1,6 +1,7 @@
 mod env;
 mod object;
 mod error;
+mod builtins;
 
 #[cfg(test)]
 mod test;
@@ -13,6 +14,7 @@ use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infi
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
+use crate::evaluator::builtins::{BUILTINS, lookup_builtin};
 
 
 pub fn eval(program: Program, env: Rc<RefCell<Env>>) -> EvalResult {
@@ -153,7 +155,13 @@ fn eval_ident(ident: &ast::Ident, env: Rc<RefCell<Env>>) -> EvalResult {
     // If we use borrow() instead borrow_mut() value removing after return.
     match env.borrow_mut().get(&name) {
         Some(val) => Ok(val),
-        None => Err(EvalErrorKind::UndefinedIdent(name.clone()))
+        None => {
+            if let Some(builtin) =  lookup_builtin(name) {
+                Ok(builtin)
+            } else {
+                Err(EvalErrorKind::UndefinedIdent(name.clone()))
+            }
+        }
     }
 }
 
@@ -461,8 +469,12 @@ fn apply_func(func: &Object, args: &[Object], env: Rc<RefCell<Env>>) -> EvalResu
                 Object::Return(val) => Ok(*val),
                 _ => Ok(evaluated)
             }
-
         }
+        Object::Builtin(func) => {
+            // TODO: Make builtings runnable with refs instead values.
+            // for example: len(['a', 'big', 'list'])
+            func(args.to_vec())
+        },
         _ => Err(EvalErrorKind::NotCallable(func.clone()))
     }
 }

@@ -14,6 +14,8 @@ pub enum EvalErrorKind {
     UnsupportedInfixOp(Infix, Object, Object),
     TypeMismatch(Infix, Object, Object),
     NotCallable(Object),
+    WrongArgumentCount(/*expected*/usize, /*given*/usize),
+    UnsupportedArguments(/*func_name*/ &'static str, Vec<Object>)
 }
 
 impl fmt::Display for EvalErrorKind {
@@ -36,7 +38,12 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NotCallable(obj) => {
                 write!(f, "not callable: {}", obj)
             },
-
+            EvalErrorKind::WrongArgumentCount(expected, got) => {
+                write!(f, "wrong number of arguments, want={}, got={}", expected, got)
+            },
+            EvalErrorKind::UnsupportedArguments(/*func_name*/ fn_name, objects) => {
+                write!(f, "unsupported argument to {}: {}", fn_name, objects[0].type_name())
+            }
         }
     }
 }
