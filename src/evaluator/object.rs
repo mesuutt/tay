@@ -29,9 +29,9 @@ impl fmt::Display for Object {
             Object::Float(x) => write!(f, "{}", x),
             Object::String(x) => write!(f, "{}", x),
             Object::Bool(x) => write!(f, "{}", x),
-            Object::Func(params, body, _) => {
+            Object::Func(params, _body, _) => {
                 let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                // let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 // write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
                 write!(f, "<fn({})>", param_list.join(", "))
             }

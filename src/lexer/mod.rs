@@ -5,23 +5,21 @@ mod test;
 pub use token::Token;
 use token::lookup_ident;
 
-pub struct Lexer<'a> {
-    input: &'a str,
+pub struct Lexer {
+    input: String,
     position: usize,
     read_position: usize,
-    input_len: usize,
     ch: char,
     line: usize,
     col: usize,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
+impl Lexer {
+    pub fn new(input: String) -> Self {
         let mut lexer = Lexer {
             input,
             position: 0,
             read_position: 0,
-            input_len: input.len(),
             ch: '0',
             line: 0,
             col: 0,
@@ -31,7 +29,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_char(&mut self) {
-        if self.read_position == self.input_len {
+        if self.read_position == self.input.len() {
             self.ch = '\0';
         } else if let Some(ch) = self.input.chars().nth(self.read_position) {
             self.ch = ch;
@@ -43,7 +41,7 @@ impl<'a> Lexer<'a> {
 
     pub fn next_token(&mut self) -> Token {
         // if this fn called after already EOF, do not continue anymore.
-        if self.position == self.input_len {
+        if self.position == self.input.len() {
             return Token::EndOfFile;
         }
 

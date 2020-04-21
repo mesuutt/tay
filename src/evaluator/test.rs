@@ -3,17 +3,15 @@ mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
     use crate::evaluator::{Env, eval};
-    use super::super::{Evaluator, Object};
+    use super::super::{Object};
     use crate::evaluator::error::EvalErrorKind;
-    use crate::ast;
-    use crate::ast::BlockStatement;
     use std::rc::Rc;
     use std::cell::RefCell;
     use pretty_assertions::assert_eq;
     use crate::evaluator::object::EvalResult;
 
     fn test_eval(input: &str) -> EvalResult {
-        let prog = Parser::new(Lexer::new(input)).parse();
+        let prog = Parser::new(Lexer::new(input.to_owned())).parse();
         let env = Rc::new(RefCell::new(Env::new()));
         eval(prog, env)
     }

@@ -2,7 +2,7 @@
 pub mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix, BlockStatement};
+    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -14,7 +14,7 @@ pub mod test {
         let foo = "hello";
         "#;
 
-        let mut p = Parser::new(Lexer::new(input));
+        let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 4);
         assert_eq!(prog.errors.len(), 0);
@@ -35,7 +35,7 @@ pub mod test {
         return foo;
         "#;
 
-        let mut p = Parser::new(Lexer::new(input));
+        let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 2);
         assert_eq!(prog.errors.len(), 0);
@@ -49,7 +49,7 @@ pub mod test {
     #[test]
     fn if_expression() {
         let input = "if (x < y) {x} else {y}";
-        let mut p = Parser::new(Lexer::new(input));
+        let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 1);
         assert_eq!(prog.errors.len(), 0);
@@ -78,7 +78,7 @@ pub mod test {
         ];
 
         for (input, expect_param, expect_body) in expected {
-            let mut p = Parser::new(Lexer::new(input));
+            let mut p = Parser::new(Lexer::new(input.to_owned()));
             let program = p.parse();
             assert_eq!(program.statements.len(), 1);
             assert_eq!(program.errors.len(), 0);
@@ -95,7 +95,7 @@ pub mod test {
 
     #[test]
     fn call_expression() {
-        let program = Parser::new(Lexer::new("add(1, 2)")).parse();
+        let program = Parser::new(Lexer::new("add(1, 2)".to_owned())).parse();
         assert_eq!(program.statements.len(), 1);
         assert_eq!(program.errors.len(), 0);
         if let Statement::Expression(Expression::Call { func, args }) = program.statements.first().unwrap() {
@@ -110,13 +110,13 @@ pub mod test {
     #[test]
     fn parser_errors() {
         let invalid_input = "let x 5;";
-        let program = Parser::new(Lexer::new(invalid_input)).parse();
+        let program = Parser::new(Lexer::new(invalid_input.to_owned())).parse();
         assert_eq!(program.errors.len(), 1);
     }
 
     #[test]
     fn integer_float_literal_expr() {
-        let program = Parser::new(Lexer::new("5;6.1;")).parse();
+        let program = Parser::new(Lexer::new("5;6.1;".to_owned())).parse();
         let expected = vec![
             Statement::Expression(Expression::Literal(Literal::Int(5))),
             Statement::Expression(Expression::Literal(Literal::Float(6.1))),
@@ -126,7 +126,7 @@ pub mod test {
 
     #[test]
     fn prefix_expr() {
-        let program = Parser::new(Lexer::new("!5;-15; !false")).parse();
+        let program = Parser::new(Lexer::new("!5;-15; !false".to_owned())).parse();
         let expected = vec![
             Statement::Expression(Expression::Prefix(Prefix::Bang, Box::new(Expression::Literal(Literal::Int(5))))),
             Statement::Expression(Expression::Prefix(Prefix::Minus, Box::new(Expression::Literal(Literal::Int(15))))),
@@ -137,7 +137,7 @@ pub mod test {
 
     #[test]
     fn infix_expr() {
-        let program = Parser::new(Lexer::new("5 + 15 * 18;")).parse();
+        let program = Parser::new(Lexer::new("5 + 15 * 18;".to_owned())).parse();
         assert_eq!(0, program.errors.len());
 
         let expected = vec![
@@ -160,7 +160,7 @@ pub mod test {
 
     #[test]
     fn string_literal() {
-        let program = Parser::new(Lexer::new(r#""hello world""#)).parse();
+        let program = Parser::new(Lexer::new(r#""hello world""#.to_owned())).parse();
         let expected = vec![
             Statement::Expression( Expression::Literal(Literal::String(String::from("hello world")))),
         ];
@@ -188,7 +188,7 @@ pub mod test {
         ];
 
         for &(input, expected) in data.iter() {
-            let program = Parser::new(Lexer::new(input)).parse();
+            let program = Parser::new(Lexer::new(input.to_owned())).parse();
             assert_eq!(program.errors.len(), 0);
             assert_eq!(format!("{}", program.statements.first().unwrap()), expected);
         }

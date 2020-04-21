@@ -5,7 +5,7 @@ mod test {
 
     #[test]
     fn read_char() {
-        let mut l = Lexer::new("()");
+        let mut l = Lexer::new("()".to_owned());
         assert_eq!(l.position, 0);
         l.read_char();
         assert_eq!(l.position, 1);
@@ -93,7 +93,7 @@ let a = "hello";
             Token::EndOfFile,
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             let t = lex.next_token();
             assert_eq!(t, i);
@@ -110,7 +110,7 @@ let a = "hello";
             Token::EndOfFile
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             let t = lex.next_token();
             assert_eq!(t, i);
@@ -139,7 +139,7 @@ let b = bar;
             ('\0', 5, 2),
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             assert_eq!((lex.ch, lex.line, lex.col), i);
             // println!("{:?}", (lex.ch, lex.row, lex.col));

@@ -35,7 +35,7 @@ pub fn start() {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
-                let program = Parser::new(Lexer::new(line.as_str())).parse();
+                let program = Parser::new(Lexer::new(line)).parse();
                 if !program.errors.is_empty() {
                     for err in program.errors.iter() {
                         println!("Parse error: {}", err);

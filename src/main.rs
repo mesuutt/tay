@@ -38,7 +38,7 @@ fn eval_file(filename: &str)  {
     }
 
     let env = Env::new();
-    let program = Parser::new(Lexer::new(source.as_str())).parse();
+    let program = Parser::new(Lexer::new(source)).parse();
     if !program.errors.is_empty() {
         for err in program.errors.iter() {
             println!("Parse error: {}", err);
