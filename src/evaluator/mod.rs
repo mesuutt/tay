@@ -7,7 +7,7 @@ mod builtins;
 mod test;
 
 pub use env::Env;
-use object::Object;
+pub use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalErrorKind;
 use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix, Ident};

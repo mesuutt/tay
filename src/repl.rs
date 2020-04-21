@@ -1,6 +1,6 @@
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::evaluator::{eval, Env};
+use crate::evaluator::{eval, Env, Object};
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
@@ -44,7 +44,10 @@ pub fn start() {
                 }
                 match eval(program, env.clone()) {
                     Ok(obj) => {
-                        println!("{}", obj)
+                        match obj {
+                            Object::Null => {},
+                            _ => println!("{}", obj),
+                        }
                     }
                     Err(e) => println!("ERROR: {}", e)
                 }
