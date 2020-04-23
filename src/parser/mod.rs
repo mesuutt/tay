@@ -3,7 +3,7 @@ mod test;
 
 use std::{fmt, mem};
 use crate::lexer::{Token, Lexer};
-use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix, FloatSize, IntegerSize, BlockStatement};
+use crate::ast::{Program, Statement, Precedence, Expression, Literal, Prefix, Infix, FloatSize, IntegerSize, BlockStatement};
 
 #[derive(PartialEq, Debug)]
 pub enum ParseError {
@@ -220,9 +220,9 @@ impl Parser {
         })
     }
 
-    fn parse_ident(&mut self) -> ParseResult<Ident> {
+    fn parse_ident(&mut self) -> ParseResult<String> {
         match self.current_token {
-            Token::Ident(ref mut ident_str) => Ok(Ident(ident_str.clone())),
+            Token::Ident(ref mut ident_str) => Ok(ident_str.clone()),
             _ => Err(ParseError::InvalidToken(self.current_token.clone()))
         }
     }
@@ -392,7 +392,7 @@ impl Parser {
         })
     }
 
-    fn parse_func_params(&mut self) -> ParseResult<Vec<Ident>> {
+    fn parse_func_params(&mut self) -> ParseResult<Vec<String>> {
         let mut idents = vec![];
 
         if self.peek_token_is(Token::RParen) {

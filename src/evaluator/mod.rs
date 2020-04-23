@@ -10,7 +10,7 @@ pub use env::Env;
 pub use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalErrorKind;
-use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix, Ident};
+use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
@@ -63,8 +63,7 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
         ast::Expression::Func {identifier, params, body } => {
             let func = Object::Func(params.to_vec(), body.clone(), env.clone());
             if identifier.is_some() { // if function has a name, add to env
-                let ast::Ident(key) = identifier.as_ref().unwrap();
-                env.borrow_mut().set(key.clone(), &func);
+                env.borrow_mut().set(identifier.clone().unwrap(), &func);
             }
 
             Ok(func)
@@ -156,16 +155,15 @@ fn eval_literal(literal: &ast::Literal) -> Object {
     }
 }
 
-fn eval_ident(ident: &ast::Ident, env: Rc<RefCell<Env>>) -> EvalResult {
-    let ast::Ident(name) = ident;
+fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
     // If we use borrow() instead borrow_mut() value removing after return.
-    match env.borrow_mut().get(&name) {
+    match env.borrow_mut().get(&ident) {
         Some(val) => Ok(val),
         None => {
-            if let Some(builtin) =  lookup_builtin(name) {
+            if let Some(builtin) =  lookup_builtin(ident) {
                 Ok(builtin)
             } else {
-                Err(EvalErrorKind::UndefinedIdent(name.clone()))
+                Err(EvalErrorKind::UndefinedIdent(ident.clone()))
             }
         }
     }
@@ -448,10 +446,9 @@ fn eval_string_infix_expr(operator: &ast::Infix, left_val: &str, right_val: &str
     Ok(result)
 }
 
-fn eval_let_statement(ident: &ast::Ident, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
+fn eval_let_statement(ident: &String, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
     let value = eval_expr(expr, env.clone())?;
-    let ast::Ident(name) = ident;
-    env.borrow_mut().set(name.clone(), &value);
+    env.borrow_mut().set(ident.clone(), &value);
     Ok(Object::Null)
 }
 
@@ -485,10 +482,10 @@ fn apply_func(func: &Object, args: &[Object], env: Rc<RefCell<Env>>) -> EvalResu
     }
 }
 
-fn extend_func_env(params: Vec<Ident>, args: &[Object], parent_env: Rc<RefCell<Env>>) -> Rc<RefCell<Env>> {
+fn extend_func_env(params: Vec<String>, args: &[Object], parent_env: Rc<RefCell<Env>>) -> Rc<RefCell<Env>> {
     let new_env = Rc::new(RefCell::new(Env::extend(&parent_env)));
     for (i, param) in params.iter().enumerate() {
-        new_env.borrow_mut().set(param.0.clone(), args.get(i).unwrap())
+        new_env.borrow_mut().set(param.clone(), args.get(i).unwrap())
     }
     new_env
 }

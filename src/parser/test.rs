@@ -2,7 +2,7 @@
 pub mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::ast::{Statement, Ident, Literal, Expression, Prefix, Infix};
+    use crate::ast::{Statement, Literal, Expression, Prefix, Infix};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -20,10 +20,10 @@ pub mod test {
         assert_eq!(prog.errors.len(), 0);
 
         assert_eq!(prog.statements, vec![
-            Statement::Let(Ident(String::from("x")), Expression::Literal(Literal::Int(5))),
-            Statement::Let(Ident(String::from("y")), Expression::Literal(Literal::Int(10))),
-            Statement::Let(Ident(String::from("z")), Expression::Literal(Literal::Float(1.2))),
-            Statement::Let(Ident(String::from("foo")), Expression::Literal(Literal::String("hello".to_owned()))),
+            Statement::Let(String::from("x"), Expression::Literal(Literal::Int(5))),
+            Statement::Let(String::from("y"), Expression::Literal(Literal::Int(10))),
+            Statement::Let(String::from("z"), Expression::Literal(Literal::Float(1.2))),
+            Statement::Let(String::from("foo"), Expression::Literal(Literal::String("hello".to_owned()))),
         ]);
     }
 
@@ -42,7 +42,7 @@ pub mod test {
 
         assert_eq!(prog.statements, vec![
             Statement::Return(Expression::Literal(Literal::Int(1))),
-            Statement::Return(Expression::Ident(Ident("foo".to_string()))),
+            Statement::Return(Expression::Ident("foo".to_string())),
         ]);
     }
 
@@ -59,11 +59,11 @@ pub mod test {
                 condition: Box::new(
                     Expression::Infix(
                         Infix::Lt,
-                        Box::new(Expression::Ident(Ident("x".to_string()))),
-                        Box::new(Expression::Ident(Ident("y".to_string()))),
+                        Box::new(Expression::Ident("x".to_string())),
+                        Box::new(Expression::Ident("y".to_string())),
                     )),
-                consequence: vec![Statement::Expression(Expression::Ident(Ident("x".to_string())))],
-                alternative: Some(vec![Statement::Expression(Expression::Ident(Ident("y".to_string())))]),
+                consequence: vec![Statement::Expression(Expression::Ident("x".to_string()))],
+                alternative: Some(vec![Statement::Expression(Expression::Ident("y".to_string()))]),
             }),
         ]);
     }
@@ -75,7 +75,7 @@ pub mod test {
             ("fn () {}", None, Vec::<&str>::new(), Vec::<&str>::new()),
             ("fn (x, y) {x * y}", None, vec!["x", "y"], vec!["(x * y)"]),
             ("fn (x, y, z) {x * y * z}", None, vec!["x", "y", "z"], vec!["((x * y) * z)"]),
-            ("fn foo() {}", Some(Ident("foo".to_owned())), Vec::<&str>::new(), Vec::<&str>::new()),
+            ("fn foo() {}", Some("foo".to_owned()), Vec::<&str>::new(), Vec::<&str>::new()),
         ];
 
         for (input, expect_name, expect_param, expect_body) in expected {
