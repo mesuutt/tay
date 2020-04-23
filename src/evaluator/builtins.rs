@@ -1,4 +1,4 @@
-use crate::evaluator::object::{BuiltinFunc, Object, EvalResult, assert_argument_count};
+use crate::evaluator::object::{Object, EvalResult, assert_argument_count};
 use crate::evaluator::error::EvalErrorKind;
 
 pub struct Builtin {
@@ -26,6 +26,6 @@ fn len_fn(args: Vec<Object>) -> EvalResult {
     assert_argument_count(1, &args)?;
     match &args[0] {
         Object::String(x) => Ok(Object::Int(x.len() as i64)),
-        x => Err(EvalErrorKind::UnsupportedArguments("len", args))
+        _ => Err(EvalErrorKind::UnsupportedArguments("len", args))
     }
 }

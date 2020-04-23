@@ -140,7 +140,7 @@ fn eval_if_expression(
     if is_truthy(&cond) {
         eval_block_statement(consequence, env)
     } else if let Some(alt) = alternative {
-        eval_block_statement(alt.as_ref(), env)
+        eval_block_statement(alt, env)
     } else {
         Ok(Object::Null)
     }
@@ -469,7 +469,7 @@ fn eval_call_expr(func_expr: &Expression, arguments: &[Expression], env: Rc<RefC
 fn apply_func(func: &Object, args: &[Object], env: Rc<RefCell<Env>>) -> EvalResult {
     match func {
         Object::Func(params, body, _) => {
-            let extended_env = extend_func_env(params.clone(), args, env.clone());
+            let extended_env = extend_func_env(params.clone(), args, env);
             let evaluated = eval_block_statement(body, extended_env)?;
             match evaluated {
                 Object::Return(val) => Ok(*val),
