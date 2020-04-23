@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::ast::{IntegerSize, FloatSize, Ident, BlockStatement};
+use crate::ast::{IntegerSize, FloatSize, BlockStatement};
 use crate::evaluator::error::EvalErrorKind;
 use crate::evaluator::Env;
 use std::rc::Rc;
@@ -15,7 +15,7 @@ pub enum Object {
     String(String),
     Bool(bool),
     Return(Box<Object>),
-    Func(/*params*/Vec<Ident>, BlockStatement, Rc<RefCell<Env>>),
+    Func(/*params*/Vec<String>, BlockStatement, Rc<RefCell<Env>>),
     Builtin(BuiltinFunc),
 
     // falsy if expr conditions and assigning variables returns NULL
