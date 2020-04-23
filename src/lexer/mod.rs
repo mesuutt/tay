@@ -107,10 +107,11 @@ impl Lexer {
                 token = Token::String(self.read_string())
             }
             _ => {
+                // identifiers must start with alphabet chars
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();
                     return lookup_ident(literal);
-                } else if self.ch.is_ascii_alphanumeric() {
+                } else if self.ch.is_ascii_digit() || self.ch == '.' {
                     let literal = self.read_number();
                     if literal.contains('.') {
                         return Token::Float(literal);
@@ -140,7 +141,8 @@ impl Lexer {
 
     fn read_identifier(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphabetic() || self.ch == '_' {
+
+        while self.ch.is_ascii_alphanumeric() || self.ch == '_' {
             self.read_char();
         }
 
@@ -149,11 +151,8 @@ impl Lexer {
 
     fn read_number(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphanumeric() || self.ch == '.' {
+        while self.ch.is_ascii_digit() || self.ch == '.' {
             self.read_char();
-            /*if self.read_position > self.input_len {
-                break;
-            }*/
         }
 
         self.input.chars().skip(pos).take(self.position - pos).collect::<String>()

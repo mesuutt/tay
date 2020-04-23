@@ -29,6 +29,7 @@ my_float = 1.2;
 "foo"
 "foo bar"
 let a = "hello";
+ident_with_num_1
 // comment 1
 /* comment 2 */
 "#;
@@ -90,6 +91,7 @@ let a = "hello";
             Token::Assign,
             Token::String(String::from("hello")),
             Token::Semicolon,
+            Token::Ident(String::from("ident_with_num_1")),
             Token::EndOfFile,
         ];
 
