@@ -72,18 +72,20 @@ pub mod test {
     #[test]
     fn function() {
         let expected = vec![
-            ("fn () {}", Vec::<&str>::new(), Vec::<&str>::new()),
-            ("fn (x, y) {x * y}", vec!["x", "y"], vec!["(x * y)"]),
-            ("fn (x, y, z) {x * y * z}", vec!["x", "y", "z"], vec!["((x * y) * z)"]),
+            ("fn () {}", None, Vec::<&str>::new(), Vec::<&str>::new()),
+            ("fn (x, y) {x * y}", None, vec!["x", "y"], vec!["(x * y)"]),
+            ("fn (x, y, z) {x * y * z}", None, vec!["x", "y", "z"], vec!["((x * y) * z)"]),
+            ("fn foo() {}", Some(Ident("foo".to_owned())), Vec::<&str>::new(), Vec::<&str>::new()),
         ];
 
-        for (input, expect_param, expect_body) in expected {
+        for (input, expect_name, expect_param, expect_body) in expected {
             let mut p = Parser::new(Lexer::new(input.to_owned()));
             let program = p.parse();
             assert_eq!(program.statements.len(), 1);
             assert_eq!(program.errors.len(), 0);
 
-            if let Statement::Expression(Expression::Func { params, body }) = program.statements.first().unwrap() {
+            if let Statement::Expression(Expression::Func { identifier, params, body }) = program.statements.first().unwrap() {
+                assert_eq!(*identifier, expect_name);
                 assert_eq!(params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), expect_param);
                 assert_eq!(body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), expect_body)
             } else {
@@ -162,7 +164,7 @@ pub mod test {
     fn string_literal() {
         let program = Parser::new(Lexer::new(r#""hello world""#.to_owned())).parse();
         let expected = vec![
-            Statement::Expression( Expression::Literal(Literal::String(String::from("hello world")))),
+            Statement::Expression(Expression::Literal(Literal::String(String::from("hello world")))),
         ];
         assert_eq!(program.statements, expected);
     }

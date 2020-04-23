@@ -355,8 +355,20 @@ impl Parser {
     }
 
     fn parse_func_literal(&mut self) -> ParseResult<Expression> {
+        let mut identifier = None;
         if self.expect_peek(Token::LParen).is_err() {
-            return Err(ParseError::InvalidToken(self.peek_token.clone()));
+            if let Token::Ident(_ident) = self.peek_token.clone() {
+                self.next_token(); // skip fn
+                identifier = match self.parse_ident() {
+                    Ok(i) => {
+                         self.next_token(); // skip ident
+                        Some(i)
+                    },
+                    Err(e) => return Err(e)
+                };
+            } else {
+                return Err(ParseError::InvalidToken(self.peek_token.clone()));
+            }
         }
 
         let params = match self.parse_func_params() {
@@ -374,6 +386,7 @@ impl Parser {
         };
 
         Ok(Expression::Func {
+            identifier,
             params,
             body,
         })

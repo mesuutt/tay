@@ -83,6 +83,7 @@ pub enum Expression {
 
     // fn (x, y) {}
     Func {
+        identifier: Option<Ident>, // name of the function
         params: Vec<Ident>,
         body: BlockStatement,
     },
@@ -113,10 +114,10 @@ impl fmt::Display for Expression {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
                 write!(f, "{}({})", func, arg_list.join(", "))
             }
-            Expression::Func { params, body } => {
+            Expression::Func { identifier: name, params, body } => {
                 let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 let statement_list = body.into_iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
+                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or(Ident("".to_owned())), param_list.join(", "), statement_list.join(""))
             }
 
             Expression::If { condition, consequence, alternative } => {

@@ -14,7 +14,7 @@ use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infi
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
-use crate::evaluator::builtins::{BUILTINS, lookup_builtin};
+use crate::evaluator::builtins::{lookup_builtin};
 
 
 pub fn eval(program: Program, env: Rc<RefCell<Env>>) -> EvalResult {
@@ -60,8 +60,14 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
         Expression::Infix(operator, left_expr, right_expr) => {
             eval_infix_expr(operator, left_expr, right_expr, env)
         }
-        ast::Expression::Func { params, body } => {
-            Ok(Object::Func(params.to_vec(), body.clone(), env))
+        ast::Expression::Func {identifier, params, body } => {
+            let func = Object::Func(params.to_vec(), body.clone(), env.clone());
+            if identifier.is_some() { // if function has a name, add to env
+                let ast::Ident(key) = identifier.as_ref().unwrap();
+                env.borrow_mut().set(key.clone(), &func);
+            }
+
+            Ok(func)
         }
         ast::Expression::Call { func, args } => {
             eval_call_expr(func, args, env)
