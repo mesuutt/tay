@@ -10,6 +10,14 @@ pub const BUILTINS: &[Builtin] = &[
     Builtin{
         name: "len",
         builtin: Object::Builtin(len_fn)
+    },
+    Builtin{
+        name: "print",
+        builtin: Object::Builtin(print_fn)
+    },
+    Builtin{
+        name: "println",
+        builtin: Object::Builtin(println_fn)
     }
 ];
 
@@ -28,4 +36,18 @@ fn len_fn(args: Vec<Object>) -> EvalResult {
         Object::String(x) => Ok(Object::Int(x.len() as i64)),
         _ => Err(EvalErrorKind::UnsupportedArguments("len", args))
     }
+}
+
+fn print_fn(args: Vec<Object>) -> EvalResult {
+    assert_argument_count(1, &args)?;
+    for i in args {
+        print!("{}", i)
+    }
+    Ok(Object::Null)
+}
+
+fn println_fn(args: Vec<Object>) -> EvalResult {
+    assert_argument_count(1, &args)?;
+    println!("{}", args[0]);
+    Ok(Object::Null)
 }
