@@ -34,6 +34,7 @@ fn len_fn(args: Vec<Object>) -> EvalResult {
     assert_argument_count(1, &args)?;
     match &args[0] {
         Object::String(x) => Ok(Object::Int(x.len() as i64)),
+        Object::List(elems) => Ok(Object::Int(elems.len() as i64)),
         _ => Err(EvalErrorKind::UnsupportedArguments("len", args))
     }
 }

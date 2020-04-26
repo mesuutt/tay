@@ -10,6 +10,7 @@ pub enum ParseError {
     InvalidToken(Token),
     InvalidSyntax(String),
     NoPrefixParseFn(Token),
+    ExpectedRBracket,
 }
 
 impl fmt::Display for ParseError {
@@ -18,6 +19,7 @@ impl fmt::Display for ParseError {
             ParseError::InvalidSyntax(error) => write!(f, "Invalid syntax: `{}`", error),
             ParseError::InvalidToken(token) => write!(f, "Invalid token: `{}`", token),
             ParseError::NoPrefixParseFn(token) => write!(f, "no prefix parse function for {} found", token),
+            ParseError::ExpectedRBracket => write!(f, "] expected"),
         }
     }
 }
@@ -92,6 +94,7 @@ impl Parser {
             Token::Lt | Token::Gt | Token::Lte | Token::Gte => Precedence::LessGreater,
             Token::Caret => Precedence::Exponent,
             Token::LParen => Precedence::Call,
+            Token::LBracket => Precedence::Index,
             _ => Precedence::Lowest
         }
     }
@@ -195,6 +198,7 @@ impl Parser {
             Token::LParen => Parser::parse_grouped_expr,
             Token::If => Parser::parse_if_expr,
             Token::Function => Parser::parse_func_literal,
+            Token::LBracket => Parser::parse_list_literal,
             _ => return None
         };
 
@@ -216,6 +220,7 @@ impl Parser {
             | Token::Lte
             | Token::Gte => Parser::parse_infix_expr,
             Token::LParen => Parser::parse_call_expr,
+            Token::LBracket => Parser::parse_index_expr,
             _ => return None
         })
     }
@@ -361,9 +366,9 @@ impl Parser {
                 self.next_token(); // skip fn
                 identifier = match self.parse_ident() {
                     Ok(i) => {
-                         self.next_token(); // skip ident
+                        self.next_token(); // skip ident
                         Some(i)
-                    },
+                    }
                     Err(e) => return Err(e)
                 };
             } else {
@@ -475,7 +480,6 @@ impl Parser {
         })
     }
 
-
     fn parse_block_statement(&mut self) -> ParseResult<BlockStatement> {
         self.next_token();
         let mut statements: BlockStatement = vec![];
@@ -489,5 +493,21 @@ impl Parser {
         }
 
         Ok(statements)
+    }
+
+    fn parse_list_literal(&mut self) -> ParseResult<Expression> {
+        let elems = self.parse_expression_list(Token::RBracket)?;
+        Ok(Expression::List(elems))
+    }
+
+    fn parse_index_expr(&mut self, left: Expression) -> ParseResult<Expression> {
+        self.next_token();
+        let index = self.parse_expression(Precedence::Lowest)?;
+
+        if self.expect_peek(Token::RBracket).is_err() {
+            return Err(ParseError::ExpectedRBracket);
+        }
+
+        Ok(Expression::Index(Box::new(left), Box::new(index)))
     }
 }

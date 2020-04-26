@@ -186,13 +186,29 @@ pub mod test {
             ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
             ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
             ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
-            ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")
+            ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"),
+            ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+            ("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"),
         ];
 
         for &(input, expected) in data.iter() {
             let program = Parser::new(Lexer::new(input.to_owned())).parse();
             assert_eq!(program.errors.len(), 0);
             assert_eq!(format!("{}", program.statements.first().unwrap()), expected);
+        }
+    }
+
+    #[test]
+    fn list_literal() {
+        let tests = vec![
+            ("[1, 2 * 2, 3 + 3]", "[1, (2 * 2), (3 + 3)]"),
+            ("[]", "[]"),
+            ("my_list[1]", "(my_list[1])")
+        ];
+
+        for &(input, expected) in tests.iter() {
+            let program = Parser::new(Lexer::new(input.to_string())).parse();
+            assert_eq!(program.to_string(), expected)
         }
     }
 }

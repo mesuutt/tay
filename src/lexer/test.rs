@@ -30,6 +30,7 @@ my_float = 1.2;
 "foo bar"
 let a = "hello";
 ident_with_num_1
+[1, 2]
 // comment 1
 /* comment 2 */
 "#;
@@ -92,6 +93,11 @@ ident_with_num_1
             Token::String(String::from("hello")),
             Token::Semicolon,
             Token::Ident(String::from("ident_with_num_1")),
+            Token::LBracket,
+            Token::Int("1".to_string()),
+            Token::Comma,
+            Token::Int("2".to_string()),
+            Token::RBracket,
             Token::EndOfFile,
         ];
 

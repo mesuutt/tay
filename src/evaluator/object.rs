@@ -17,7 +17,7 @@ pub enum Object {
     Return(Box<Object>),
     Func(/*params*/Vec<String>, BlockStatement, Rc<RefCell<Env>>),
     Builtin(BuiltinFunc),
-
+    List(Vec<Object>),
     // falsy if expr conditions and assigning variables returns NULL
     // if (1>2) {10} => NULL
     // a = 12 => NULL
@@ -37,6 +37,11 @@ impl fmt::Display for Object {
                 // write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
                 write!(f, "<fn({})>", param_list.join(", "))
             }
+            Object::List(elements) => {
+                let element_list = elements.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "[{}]", element_list.join(", "))
+            }
+
             Object::Builtin(_func) => {
                 write!(f, "<builtin function>")
             }
@@ -57,6 +62,7 @@ impl Object {
             Object::Null => "NULL",
             Object::Func(_, _, _) => "FUNC",
             Object::Builtin(_) => "BUILTIN",
+            Object::List(_) => "LIST",
         }
     }
 }

@@ -162,6 +162,22 @@ mod test {
         ]);
     }
 
+    #[test]
+    fn lists() {
+        expect_values(vec![
+            ("[1 + 2 ,3 * 4]", "[3, 12]"),
+            ("[1 + 2 ,3 * 4][1]", "12"),
+            ("let i = 0; [1][0]", "1"),
+            ("let ml = [1,2,3]; ml[0] + ml[1] + ml[2]", "6"),
+            ("len([1,2,3])", "3"),
+        ]);
+
+        expect_error(vec![
+            ("[1][-1]", "key error: -1"),
+        ])
+    }
+
+
     fn expect_values(tests: Vec<(&str, &str)>) {
         for (input, expected) in tests {
             match test_eval(input) {

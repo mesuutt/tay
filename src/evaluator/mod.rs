@@ -14,7 +14,7 @@ use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infi
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
-use crate::evaluator::builtins::{lookup_builtin};
+use crate::evaluator::builtins::lookup_builtin;
 
 
 pub fn eval(program: Program, env: Rc<RefCell<Env>>) -> EvalResult {
@@ -60,7 +60,7 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
         Expression::Infix(operator, left_expr, right_expr) => {
             eval_infix_expr(operator, left_expr, right_expr, env)
         }
-        ast::Expression::Func {identifier, params, body } => {
+        Expression::Func { identifier, params, body } => {
             let func = Object::Func(params.to_vec(), body.clone(), env.clone());
             if identifier.is_some() { // if function has a name, add to env
                 env.borrow_mut().set(identifier.clone().unwrap(), &func);
@@ -68,11 +68,17 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
 
             Ok(func)
         }
-        ast::Expression::Call { func, args } => {
+        Expression::Call { func, args } => {
             eval_call_expr(func, args, env)
         }
-        ast::Expression::If { condition, consequence, alternative } => {
+        Expression::If { condition, consequence, alternative } => {
             eval_if_expression(condition, consequence, alternative, env)
+        }
+        Expression::List(elements) => {
+            Ok(Object::List(eval_exprs(elements, env)?))
+        }
+        Expression::Index(left, index) => {
+            eval_index_expr(left, index, env)
         }
     }
 }
@@ -93,7 +99,7 @@ fn eval_prefix_expr(operator: &Prefix, right_expr: &Expression, env: Rc<RefCell<
                 Object::Int(x) => Ok(Object::Int(-x)),
                 _ => Err(EvalErrorKind::UnknownPrefixOp(Prefix::Minus, right))
             }
-        },
+        }
         Prefix::Bang => {
             Ok(match right {
                 Object::Bool(true) => Object::Bool(false),
@@ -160,7 +166,7 @@ fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
     match env.borrow_mut().get(&ident) {
         Some(val) => Ok(val),
         None => {
-            if let Some(builtin) =  lookup_builtin(ident) {
+            if let Some(builtin) = lookup_builtin(ident) {
                 Ok(builtin)
             } else {
                 Err(EvalErrorKind::UndefinedIdent(ident.clone()))
@@ -184,7 +190,7 @@ fn eval_integer_infix_expr(operator: &ast::Infix, left_val: i64, right_val: i64)
         ast::Infix::Exponent => {
             let (num, is_overflow) = (left_val as i32).overflowing_pow(right_val as u32);
             if is_overflow {
-                return Err(EvalErrorKind::ExponentTooLarge)
+                return Err(EvalErrorKind::ExponentTooLarge);
             } else {
                 Object::Int(num as i64)
             }
@@ -311,7 +317,7 @@ fn eval_float_with_int_infix_expr(operator: &ast::Infix, left_val: ast::FloatSiz
             // Ok(Object::Float(num))
             return Err(EvalErrorKind::UnsupportedInfixOp(
                 operator.clone(), Object::Float(left_val), Object::Int(right_val))
-            )
+            );
         }
         ast::Infix::Lt => {
             if left_val < (right_val as FloatSize) {
@@ -372,7 +378,7 @@ fn eval_int_with_float_infix_expr(operator: &ast::Infix, left_val: ast::IntegerS
             // Ok(Object::Float(num as ast::FloatSize))
             return Err(EvalErrorKind::UnsupportedInfixOp(
                 operator.clone(), Object::Int(left_val), Object::Float(right_val))
-            )
+            );
         }
         ast::Infix::Lt => {
             if (left_val as FloatSize) < right_val {
@@ -438,8 +444,8 @@ fn eval_string_infix_expr(operator: &ast::Infix, left_val: &str, right_val: &str
             return Err(EvalErrorKind::UnknownInfixOp(
                 operator.clone(),
                 Object::String(left_val.to_owned()),
-                Object::String(right_val.to_owned())
-            ))
+                Object::String(right_val.to_owned()),
+            ));
         }
     };
 
@@ -477,7 +483,7 @@ fn apply_func(func: &Object, args: &[Object], env: Rc<RefCell<Env>>) -> EvalResu
             // TODO: Make builtings runnable with refs instead values.
             // for example: len(['a', 'big', 'list'])
             func(args.to_vec())
-        },
+        }
         _ => Err(EvalErrorKind::NotCallable(func.clone()))
     }
 }
@@ -488,6 +494,22 @@ fn extend_func_env(params: Vec<String>, args: &[Object], parent_env: Rc<RefCell<
         new_env.borrow_mut().set(param.clone(), args.get(i).unwrap())
     }
     new_env
+}
+
+
+fn eval_index_expr(left: &Expression, index: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
+    let left_evalulated = eval_expr(left, env.clone())?;
+    let index_evaluated = eval_expr(index, env.clone())?;
+
+    match (left_evalulated, index_evaluated) {
+        (Object::List(elems), Object::Int(index)) => {
+            match elems.get(index as usize) {
+                Some(e) => Ok(e.clone()),
+                None => return Err(EvalErrorKind::KeyError(Object::Int(index)))
+            }
+        }
+        (l, i) => return Err(EvalErrorKind::UnknownIndexOperator(l, i))
+    }
 }
 
 fn is_truthy(obj: &Object) -> bool {

@@ -64,6 +64,9 @@ pub enum Expression {
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
+    List(Vec<Expression>),
+    // left can be an ident, a list, a func call etc.
+    Index(/*left*/Box<Expression>, /*index*/Box<Expression>),
 
     // myFunc(x, y)
     Call {
@@ -74,7 +77,8 @@ pub enum Expression {
 
     // fn (x, y) {}
     Func {
-        identifier: Option<String>, // name of the function
+        // name of the function
+        identifier: Option<String>,
         params: Vec<String>,
         body: BlockStatement,
     },
@@ -84,6 +88,7 @@ pub enum Expression {
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
     },
+
 }
 
 impl fmt::Display for Expression {
@@ -100,6 +105,13 @@ impl fmt::Display for Expression {
             }
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
+            }
+            Expression::List(elems) => {
+                let elem_list = elems.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "[{}]", elem_list.join(", "))
+            }
+            Expression::Index(left, index) => {
+                write!(f, "({}[{}])", left, index)
             }
             Expression::Call { func, args } => {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
@@ -177,6 +189,14 @@ pub struct Program {
     pub errors: Vec<ParseError>,
 }
 
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for stmt in &self.statements {
+            write!(f, "{}", stmt)?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(PartialOrd, PartialEq)]
 pub enum Precedence {
@@ -195,4 +215,5 @@ pub enum Precedence {
     Prefix,
     // myFunc(x), LParen
     Call,
+    Index,
 }
