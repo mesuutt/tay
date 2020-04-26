@@ -2,6 +2,7 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::evaluator::{eval, Env, Object};
 use rustyline::Editor;
+use rustyline::validate::MatchingBracketValidator;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -25,16 +26,16 @@ pub fn start() {
         history = history_file_name,
     );
 
-    let mut rl = Editor::<()>::new();
+    let mut editor = Editor::<()>::new();
     let history_path = format!("{}/{}", env::var("HOME").unwrap(), history_file_name);
-    if rl.load_history(&history_path).is_err() {}
+    if editor.load_history(&history_path).is_err() {}
     let env= Rc::new(RefCell::new(Env::new()));
 
     loop {
-        let readline = rl.readline(PROMPT);
+        let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
-                rl.add_history_entry(line.as_str());
+                editor.add_history_entry(line.as_str());
                 let program = Parser::new(Lexer::new(line)).parse();
                 if !program.errors.is_empty() {
                     for err in program.errors.iter() {
@@ -67,5 +68,5 @@ pub fn start() {
         }
     }
 
-    rl.save_history(&history_path).unwrap();
+    editor.save_history(&history_path).unwrap();
 }
