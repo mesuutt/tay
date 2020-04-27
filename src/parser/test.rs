@@ -17,7 +17,7 @@ pub mod test {
         let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 4);
-        assert_eq!(prog.errors.len(), 0);
+        assert!(prog.error.is_none());
 
         assert_eq!(prog.statements, vec![
             Statement::Let(String::from("x"), Expression::Literal(Literal::Int(5))),
@@ -38,7 +38,7 @@ pub mod test {
         let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 2);
-        assert_eq!(prog.errors.len(), 0);
+        assert!(prog.error.is_none());
 
         assert_eq!(prog.statements, vec![
             Statement::Return(Expression::Literal(Literal::Int(1))),
@@ -52,7 +52,7 @@ pub mod test {
         let mut p = Parser::new(Lexer::new(input.to_owned()));
         let prog = p.parse();
         assert_eq!(prog.statements.len(), 1);
-        assert_eq!(prog.errors.len(), 0);
+        assert!(prog.error.is_none());
 
         assert_eq!(prog.statements, vec![
             Statement::Expression(Expression::If {
@@ -82,7 +82,7 @@ pub mod test {
             let mut p = Parser::new(Lexer::new(input.to_owned()));
             let program = p.parse();
             assert_eq!(program.statements.len(), 1);
-            assert_eq!(program.errors.len(), 0);
+            assert!(program.error.is_none());
 
             if let Statement::Expression(Expression::Func { identifier, params, body }) = program.statements.first().unwrap() {
                 assert_eq!(*identifier, expect_name);
@@ -99,7 +99,7 @@ pub mod test {
     fn call_expression() {
         let program = Parser::new(Lexer::new("add(1, 2)".to_owned())).parse();
         assert_eq!(program.statements.len(), 1);
-        assert_eq!(program.errors.len(), 0);
+        assert!(program.error.is_none());
         if let Statement::Expression(Expression::Call { func, args }) = program.statements.first().unwrap() {
             assert_eq!(format!("{}", *func), "add");
             assert_eq!(args.iter().map(|s| format!("{}", s)).collect::<Vec<String>>(), vec!["1", "2"]);
@@ -113,7 +113,7 @@ pub mod test {
     fn parser_errors() {
         let invalid_input = "let x 5;";
         let program = Parser::new(Lexer::new(invalid_input.to_owned())).parse();
-        assert_eq!(program.errors.len(), 1);
+        assert!(program.error.is_some());
     }
 
     #[test]
@@ -140,7 +140,7 @@ pub mod test {
     #[test]
     fn infix_expr() {
         let program = Parser::new(Lexer::new("5 + 15 * 18;".to_owned())).parse();
-        assert_eq!(0, program.errors.len());
+        assert!(program.error.is_none());
 
         let expected = vec![
             Statement::Expression(
@@ -193,7 +193,7 @@ pub mod test {
 
         for &(input, expected) in data.iter() {
             let program = Parser::new(Lexer::new(input.to_owned())).parse();
-            assert_eq!(program.errors.len(), 0);
+            assert!(program.error.is_none());
             assert_eq!(format!("{}", program.statements.first().unwrap()), expected);
         }
     }

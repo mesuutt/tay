@@ -55,16 +55,19 @@ impl Parser {
 
     pub fn parse(&mut self) -> Program {
         let mut statements = vec![];
-        let mut errors = vec![];
+        let mut error = None;
         while !self.current_token_is(Token::EndOfFile) {
             match self.parse_statement() {
                 Ok(stmt) => statements.push(stmt),
-                Err(e) => errors.push(e)
+                Err(e) => {
+                    error = Some(e);
+                    break;
+                }
             }
             self.next_token();
         }
 
-        Program { statements, errors }
+        Program { statements, error }
     }
 
     fn current_token_is(&self, token: Token) -> bool {

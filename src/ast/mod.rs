@@ -186,7 +186,7 @@ pub type BlockStatement = Vec<Statement>;
 
 pub struct Program {
     pub statements: BlockStatement,
-    pub errors: Vec<ParseError>,
+    pub error: Option<ParseError>,
 }
 
 impl fmt::Display for Program {

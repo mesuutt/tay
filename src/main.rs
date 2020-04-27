@@ -39,10 +39,9 @@ fn eval_file(filename: &str)  {
 
     let env = Env::new();
     let program = Parser::new(Lexer::new(source)).parse();
-    if !program.errors.is_empty() {
-        for err in program.errors.iter() {
-            println!("Parse error: {}", err);
-        };
+    if let Some(err) = program.error {
+        println!("Parse error: {}", err);
+        process::exit(1);
     }
 
     match eval(program, Rc::new(RefCell::new(env))) {
