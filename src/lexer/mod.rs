@@ -12,7 +12,7 @@ pub struct Lexer {
     position: usize,
     read_position: usize,
     ch: char,
-    line: usize,
+    pub line: usize,
     col: usize,
     line_start: usize,
     token_start: usize,
@@ -26,7 +26,7 @@ impl Lexer {
             position: 0,
             read_position: 0,
             ch: '0',
-            line: 0,
+            line: 1,
             col: 0,
             token_start: 0,
             token_end: 0,
@@ -44,7 +44,7 @@ impl Lexer {
 
     // Get string slice of current token
     pub fn slice(&self) -> String {
-        self.input.chars().skip(self.token_start).take(self.token_end - self.token_start).collect::<String>()
+        self.input.chars().skip(self.token_start).take(self.token_end - self.token_start + 1).collect::<String>()
     }
 
     // get string slice of current line
@@ -63,7 +63,7 @@ impl Lexer {
         loop {
             if let Some(ch) = self.input.chars().skip(self.position).nth(i) {
                 if ch == '\n' {
-                    return self.line_start + i;
+                    return self.position + i;
                 }
                 i += 1;
                 continue;
@@ -89,7 +89,7 @@ impl Lexer {
         self.skip_whitespace();
         self.token_start = self.position;
         let token = self.read_token();
-        self.token_end = self.position;
+        self.token_end = self.position - 1;
         token
     }
 

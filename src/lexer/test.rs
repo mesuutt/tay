@@ -132,18 +132,18 @@ let a = foo;
 let b = bar;
 // my comment"#;
         let expected = vec![
-            ('\n', 0, 1),
-            (' ', 1, 4),
-            (' ', 1, 6),
-            (' ', 1, 8),
-            (';', 1, 12),
-            ('\n', 1, 13),
+            ('\n', 1, 1),
             (' ', 2, 4),
             (' ', 2, 6),
             (' ', 2, 8),
             (';', 2, 12),
             ('\n', 2, 13),
-            ('\0', 3, 14),
+            (' ', 3, 4),
+            (' ', 3, 6),
+            (' ', 3, 8),
+            (';', 3, 12),
+            ('\n', 3, 13),
+            ('\0', 4, 14),
         ];
 
         let mut lex = Lexer::new(input.to_owned());
@@ -161,11 +161,11 @@ let b = bar;
 let
 "#;
         let expected = vec![
-            ("foo", 0..3),
-            ("let", 15..18)
+            ("foo", 0..2),
+            ("let", 15..17)
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_string());
         for (slice, span) in expected {
             lex.next_token();
             assert_eq!(lex.span(), span);
@@ -184,10 +184,10 @@ let
             (0..12, r#""hello world!""#)
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_string());
         for (_span, slice) in expected {
-            lex.next_token();
-            assert_eq!(lex.line_slice(), slice)
+            let t = lex.next_token();
+            assert_eq!(lex.line_slice(), slice);
         }
     }
 
