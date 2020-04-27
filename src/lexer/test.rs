@@ -5,7 +5,7 @@ mod test {
 
     #[test]
     fn read_char() {
-        let mut l = Lexer::new("()");
+        let mut l = Lexer::new("()".to_owned());
         assert_eq!(l.position, 0);
         l.read_char();
         assert_eq!(l.position, 1);
@@ -29,6 +29,8 @@ my_float = 1.2;
 "foo"
 "foo bar"
 let a = "hello";
+ident_with_num_1
+[1, 2]
 // comment 1
 /* comment 2 */
 "#;
@@ -90,10 +92,16 @@ let a = "hello";
             Token::Assign,
             Token::String(String::from("hello")),
             Token::Semicolon,
+            Token::Ident(String::from("ident_with_num_1")),
+            Token::LBracket,
+            Token::Int("1".to_string()),
+            Token::Comma,
+            Token::Int("2".to_string()),
+            Token::RBracket,
             Token::EndOfFile,
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             let t = lex.next_token();
             assert_eq!(t, i);
@@ -110,7 +118,7 @@ let a = "hello";
             Token::EndOfFile
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             let t = lex.next_token();
             assert_eq!(t, i);
@@ -138,7 +146,7 @@ let b = bar;
             ('\0', 3, 14),
         ];
 
-        let mut lex = Lexer::new(input);
+        let mut lex = Lexer::new(input.to_owned());
         for i in expected {
             assert_eq!((lex.ch, lex.line, lex.col), i);
             // println!("{:?}", (lex.ch, lex.row, lex.col));

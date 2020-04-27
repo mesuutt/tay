@@ -2,20 +2,18 @@
 mod test {
     use crate::lexer::Lexer;
     use crate::parser::Parser;
-    use crate::evaluator::Env;
-    use super::super::{Evaluator, Object};
+    use crate::evaluator::{Env, eval};
+    use super::super::Object;
     use crate::evaluator::error::EvalErrorKind;
-    use crate::ast;
-    use crate::ast::BlockStatement;
     use std::rc::Rc;
     use std::cell::RefCell;
     use pretty_assertions::assert_eq;
+    use crate::evaluator::object::EvalResult;
 
-    fn test_eval(input: &str) -> Option<Object> {
-        let prog = Parser::new(Lexer::new(input)).parse();
-        let env = Env::new();
-        let mut evaluator = Evaluator::new(Rc::new(RefCell::new(env)));
-        evaluator.eval(prog)
+    fn test_eval(input: &str) -> EvalResult {
+        let prog = Parser::new(Lexer::new(input.to_owned())).parse();
+        let env = Rc::new(RefCell::new(Env::new()));
+        eval(prog, env)
     }
 
     #[test]
@@ -44,8 +42,8 @@ mod test {
         ];
 
         for (input, expected) in expected {
-            let evaluated = test_eval(input).unwrap();
-            assert_eq!(evaluated, Object::Float(expected));
+            let evaluated = test_eval(input);
+            assert_eq!(evaluated, Ok(Object::Float(expected)));
         }
 
         let inputs = vec![
@@ -54,8 +52,9 @@ mod test {
         ];
 
         for input in inputs {
-            match test_eval(input).unwrap() {
-                Object::Error(EvalErrorKind::TypeError(_)) => {}
+            let evaluated = test_eval(input);
+            match evaluated {
+                Err(EvalErrorKind::UnsupportedInfixOp(_, _, _)) => {}
                 _ => assert!(false),
             }
         }
@@ -72,7 +71,7 @@ mod test {
 
         for (input, expected) in expected {
             let evaluated = test_eval(input);
-            assert_eq!(evaluated, Some(Object::Int(expected)));
+            assert_eq!(evaluated, Ok(Object::Int(expected)));
         }
     }
 
@@ -86,7 +85,7 @@ mod test {
 
         for (input, expected) in expected {
             let evaluated = test_eval(input);
-            assert_eq!(evaluated, Some(expected));
+            assert_eq!(evaluated, Ok(expected));
         }
     }
 
@@ -94,7 +93,7 @@ mod test {
     fn function() {
         let evaluated = test_eval("fn(x) {x+2}");
 
-        if let Some(Object::Func(params, statements, _)) = evaluated {
+        if let Ok(Object::Func(params, statements, _)) = evaluated {
             assert_eq!(params.len(), 1);
             assert_eq!(params.iter().map(|i| format!("{}", i)).collect::<Vec<String>>().join(", "), "x");
             assert_eq!(statements.iter().map(|s| format!("{}", s)).collect::<Vec<String>>().join(""), "(x + 2)");
@@ -116,38 +115,92 @@ mod test {
 
         for (input, expected) in test_data {
             let evaluated = test_eval(input);
-            assert_eq!(evaluated, Some(Object::Int(expected)))
+            assert_eq!(evaluated, Ok(Object::Int(expected)))
         }
     }
 
     #[test]
     fn if_else() {
         let test_data = vec![
-            ("if (true) { 10 }", Some(Object::Int(10))),
-            ("if (false) { 10 }", Some(Object::Null)),
-            ("if (1) { 10 }", Some(Object::Int(10))),
-            ("if (1 < 2) { 10 }", Some(Object::Int(10))),
-            ("if (1 > 2) { 10 }", Some(Object::Null)),
-            ("if (1 > 2) { 10 } else { 20 }", Some(Object::Int(20))),
-            ("if (1 < 2) { 10 } else { 20 }", Some(Object::Int(10))),
+            ("if (true) { 10 }", Object::Int(10)),
+            ("if (false) { 10 }", Object::Null),
+            ("if (1) { 10 }", Object::Int(10)),
+            ("if (1 < 2) { 10 }", Object::Int(10)),
+            ("if (1 > 2) { 10 }", Object::Null),
+            ("if (1 > 2) { 10 } else { 20 }", Object::Int(20)),
+            ("if (1 < 2) { 10 } else { 20 }", Object::Int(10)),
         ];
 
         for (input, expected) in test_data {
             let evaluated = test_eval(input);
-            assert_eq!(evaluated, expected)
+            assert_eq!(evaluated, Ok(expected))
         }
     }
 
     #[test]
     fn string_literal() {
         let test_data = vec![
-            (r#""hello world""#, Some(Object::String("hello world".to_owned()))),
-            (r#""hello" + " " +  "world" "#, Some(Object::String("hello world".to_owned()))),
+            (r#""hello world""#, Object::String("hello world".to_owned())),
+            (r#""hello" + " " +  "world" "#, Object::String("hello world".to_owned())),
         ];
 
         for (input, expected) in test_data {
             let evaluated = test_eval(input);
-            assert_eq!(evaluated, expected)
+            assert_eq!(evaluated, Ok(expected))
+        }
+    }
+
+    #[test]
+    fn builtins() {
+        expect_values(vec![
+            (r#"len("")"#, "0"),
+            (r#"len("four")"#, "4"),
+        ]);
+        expect_error(vec![
+            ("len(1)", "unsupported argument to len: INTEGER"),
+            (r#"len("one", "two")"#, "wrong number of arguments, want=1, got=2"),
+        ]);
+    }
+
+    #[test]
+    fn lists() {
+        expect_values(vec![
+            ("[1 + 2 ,3 * 4]", "[3, 12]"),
+            ("[1 + 2 ,3 * 4][1]", "12"),
+            ("let i = 0; [1][0]", "1"),
+            ("let ml = [1,2,3]; ml[0] + ml[1] + ml[2]", "6"),
+            ("len([1,2,3])", "3"),
+        ]);
+
+        expect_error(vec![
+            ("[1][-1]", "key error: -1"),
+        ])
+    }
+
+
+    fn expect_values(tests: Vec<(&str, &str)>) {
+        for (input, expected) in tests {
+            match test_eval(input) {
+                Ok(obj) => {
+                    assert_eq!(obj.to_string(), expected)
+                }
+                Err(e) => {
+                    panic!("expected `{}`, but got error: `{}`", expected, e.to_string())
+                }
+            }
+        }
+    }
+
+    fn expect_error(tests: Vec<(&str, &str)>) {
+        for (input, expected) in tests {
+            match test_eval(input) {
+                Ok(obj) => {
+                    panic!("expected error `{}`, but got object: `{}`", expected, obj.to_string())
+                }
+                Err(e) => {
+                    assert_eq!(e.to_string(), expected)
+                }
+            }
         }
     }
 }

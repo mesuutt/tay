@@ -7,11 +7,10 @@ use token::lookup_ident;
 
 pub type Span = core::ops::Range<usize>;
 
-pub struct Lexer<'a> {
-    input: &'a str,
+pub struct Lexer {
+    input: String,
     position: usize,
     read_position: usize,
-    input_len: usize,
     ch: char,
     line: usize,
     col: usize,
@@ -20,13 +19,12 @@ pub struct Lexer<'a> {
     token_end: usize,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(input: &'a str) -> Self {
+impl Lexer {
+    pub fn new(input: String) -> Self {
         let mut lexer = Lexer {
             input,
             position: 0,
             read_position: 0,
-            input_len: input.len(),
             ch: '0',
             line: 0,
             col: 0,
@@ -77,7 +75,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_char(&mut self) {
-        if self.read_position == self.input_len {
+        if self.read_position == self.input.len() {
             self.ch = '\0';
         } else if let Some(ch) = self.input.chars().nth(self.read_position) {
             self.ch = ch;
@@ -97,7 +95,7 @@ impl<'a> Lexer<'a> {
 
     fn read_token(&mut self) -> Token {
         // if this fn called after already EOF, do not continue anymore.
-        if self.position == self.input_len {
+        if self.position == self.input.len() {
             return Token::EndOfFile;
         }
 
@@ -124,6 +122,8 @@ impl<'a> Lexer<'a> {
             ')' => token = Token::RParen,
             '{' => token = Token::LBrace,
             '}' => token = Token::RBrace,
+            '[' => token = Token::LBracket,
+            ']' => token = Token::RBracket,
             '=' => {
                 if self.next_ch_is('=') {
                     self.read_char();
@@ -160,10 +160,11 @@ impl<'a> Lexer<'a> {
                 token = Token::String(self.read_string())
             }
             _ => {
+                // identifiers must start with alphabet chars
                 if self.ch.is_ascii_alphabetic() {
                     let literal = self.read_identifier();
                     return lookup_ident(literal);
-                } else if self.ch.is_ascii_alphanumeric() {
+                } else if self.ch.is_ascii_digit() || self.ch == '.' {
                     let literal = self.read_number();
                     if literal.contains('.') {
                         return Token::Float(literal);
@@ -194,7 +195,8 @@ impl<'a> Lexer<'a> {
 
     fn read_identifier(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphabetic() || self.ch == '_' {
+
+        while self.ch.is_ascii_alphanumeric() || self.ch == '_' {
             self.read_char();
         }
 
@@ -203,11 +205,8 @@ impl<'a> Lexer<'a> {
 
     fn read_number(&mut self) -> String {
         let pos = self.position;
-        while self.ch.is_ascii_alphanumeric() || self.ch == '.' {
+        while self.ch.is_ascii_digit() || self.ch == '.' {
             self.read_char();
-            /*if self.read_position > self.input_len {
-                break;
-            }*/
         }
 
         self.input.chars().skip(pos).take(self.position - pos).collect::<String>()

@@ -4,15 +4,6 @@ use crate::parser::ParseError;
 pub type IntegerSize = i64;
 pub type FloatSize = f64;
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Ident(pub String);
-
-impl fmt::Display for Ident {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 #[derive(PartialEq, Debug, Clone)]
 pub enum Prefix {
     Minus,
@@ -69,10 +60,13 @@ impl fmt::Display for Infix {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
-    Ident(Ident),
+    Ident(String),
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
+    List(Vec<Expression>),
+    // left can be an ident, a list, a func call etc.
+    Index(/*left*/Box<Expression>, /*index*/Box<Expression>),
 
     // myFunc(x, y)
     Call {
@@ -83,7 +77,9 @@ pub enum Expression {
 
     // fn (x, y) {}
     Func {
-        params: Vec<Ident>,
+        // name of the function
+        identifier: Option<String>,
+        params: Vec<String>,
         body: BlockStatement,
     },
 
@@ -92,13 +88,14 @@ pub enum Expression {
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
     },
+
 }
 
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Expression::Ident(ident) => {
-                write!(f, "{}", ident.0)
+                write!(f, "{}", ident)
             }
             Expression::Literal(literal) => {
                 write!(f, "{}", literal)
@@ -109,14 +106,21 @@ impl fmt::Display for Expression {
             Expression::Infix(infix, left, right) => {
                 write!(f, "({} {} {})", left, infix, right)
             }
+            Expression::List(elems) => {
+                let elem_list = elems.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "[{}]", elem_list.join(", "))
+            }
+            Expression::Index(left, index) => {
+                write!(f, "({}[{}])", left, index)
+            }
             Expression::Call { func, args } => {
                 let arg_list = args.iter().map(|expr| format!("{}", expr)).collect::<Vec<String>>();
                 write!(f, "{}({})", func, arg_list.join(", "))
             }
-            Expression::Func { params, body } => {
+            Expression::Func { identifier: name, params, body } => {
                 let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 let statement_list = body.into_iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))
+                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or("".to_string()), param_list.join(", "), statement_list.join(""))
             }
 
             Expression::If { condition, consequence, alternative } => {
@@ -139,7 +143,7 @@ impl fmt::Display for Expression {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
-    Let(Ident, Expression),
+    Let(String, Expression),
     Return(Expression),
 
     // x + 10;
@@ -150,7 +154,7 @@ impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Statement::Let(ident, expr) => {
-                write!(f, "let {} = {};", ident.0, expr)
+                write!(f, "let {} = {};", ident, expr)
             }
             Statement::Expression(expr) => write!(f, "{}", expr),
             Statement::Return(expr) => write!(f, "{}", expr),
@@ -185,6 +189,14 @@ pub struct Program {
     pub errors: Vec<ParseError>,
 }
 
+impl fmt::Display for Program {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for stmt in &self.statements {
+            write!(f, "{}", stmt)?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(PartialOrd, PartialEq)]
 pub enum Precedence {
@@ -203,4 +215,5 @@ pub enum Precedence {
     Prefix,
     // myFunc(x), LParen
     Call,
+    Index,
 }

@@ -1,14 +1,16 @@
 #[cfg(test)]
 mod test;
 
-use std::fmt;
+use std::{fmt, mem};
 use crate::lexer::{Token, Lexer};
-use crate::ast::{Program, Statement, Ident, Precedence, Expression, Literal, Prefix, Infix, FloatSize, IntegerSize, BlockStatement};
+use crate::ast::{Program, Statement, Precedence, Expression, Literal, Prefix, Infix, FloatSize, IntegerSize, BlockStatement};
 
 #[derive(PartialEq, Debug)]
 pub enum ParseError {
     InvalidToken(Token),
     InvalidSyntax(String),
+    NoPrefixParseFn(Token),
+    ExpectedRBracket,
 }
 
 impl fmt::Display for ParseError {
@@ -16,18 +18,26 @@ impl fmt::Display for ParseError {
         match self {
             ParseError::InvalidSyntax(error) => write!(f, "Invalid syntax: `{}`", error),
             ParseError::InvalidToken(token) => write!(f, "Invalid token: `{}`", token),
+            ParseError::NoPrefixParseFn(token) => write!(f, "no prefix parse function for {} found", token),
+            ParseError::ExpectedRBracket => write!(f, "] expected"),
         }
     }
 }
 
-pub struct Parser<'a> {
-    lexer: Lexer<'a>,
+
+type ParseResult<T> = Result<T, ParseError>;
+type PrefixParseFn = fn(&mut Parser) -> ParseResult<Expression>;
+type InfixParseFn = fn(&mut Parser, Expression) -> ParseResult<Expression>;
+
+
+pub struct Parser {
+    lexer: Lexer,
     current_token: Token,
     peek_token: Token,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(lexer: Lexer<'a>) -> Self {
+impl Parser {
+    pub fn new(lexer: Lexer) -> Self {
         let mut p = Parser {
             lexer,
             current_token: Token::EndOfFile,
@@ -40,8 +50,7 @@ impl<'a> Parser<'a> {
     }
 
     fn next_token(&mut self) {
-        self.current_token = self.peek_token.clone();
-        self.peek_token = self.lexer.next_token();
+        self.current_token = mem::replace(&mut self.peek_token, self.lexer.next_token());
     }
 
     pub fn parse(&mut self) -> Program {
@@ -85,6 +94,7 @@ impl<'a> Parser<'a> {
             Token::Lt | Token::Gt | Token::Lte | Token::Gte => Precedence::LessGreater,
             Token::Caret => Precedence::Exponent,
             Token::LParen => Precedence::Call,
+            Token::LBracket => Precedence::Index,
             _ => Precedence::Lowest
         }
     }
@@ -97,7 +107,7 @@ impl<'a> Parser<'a> {
         self.token_to_precedence(&self.peek_token)
     }
 
-    fn parse_statement(&mut self) -> Result<Statement, ParseError> {
+    fn parse_statement(&mut self) -> ParseResult<Statement> {
         match self.current_token {
             Token::Let => self.parse_let_statement(),
             Token::Return => self.parse_return_statement(),
@@ -107,7 +117,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
+    fn parse_let_statement(&mut self) -> ParseResult<Statement> {
         if let Token::Ident(_) = self.peek_token {
             // allowing variable assignment without let keyword
             self.next_token();
@@ -136,7 +146,7 @@ impl<'a> Parser<'a> {
         Ok(Statement::Let(ident, expr))
     }
 
-    fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
+    fn parse_return_statement(&mut self) -> ParseResult<Statement> {
         self.next_token();
 
         let expr = match self.parse_expression(Precedence::Lowest) {
@@ -151,7 +161,7 @@ impl<'a> Parser<'a> {
         Ok(Statement::Return(expr))
     }
 
-    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
+    fn parse_expression_statement(&mut self) -> ParseResult<Statement> {
         match self.parse_expression(Precedence::Lowest) {
             Ok(expr) => {
                 if self.peek_token_is(Token::Semicolon) {
@@ -163,74 +173,73 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
-        // we don't have infix/prefix functions, instead calling related fn with pattern matching
-        let mut left = match self.current_token {
-            Token::Ident(_) => self.parse_ident_expr(),
-            Token::String(_) => self.parse_string_literal(),
-            Token::Int(_) => self.parse_integer_literal(),
-            Token::Float(_) => self.parse_float_literal(),
-            Token::Bool(_) => self.parse_boolean(),
-            Token::Minus | Token::Bang => self.parse_prefix_expr(),
-            Token::LParen => self.parse_grouped_expr(),
-            Token::If => self.parse_if_expr(),
-            Token::Function => self.parse_func_literal(),
-            Token::Illegal(_) => return Err(ParseError::InvalidToken(self.current_token.clone())),
-            _ => {
-                return Err(ParseError::InvalidToken(self.current_token.clone()));
-            }
-        };
+    fn parse_expression(&mut self, precedence: Precedence) -> ParseResult<Expression> {
+        let prefix = self.prefix_parse_fn().ok_or_else(|| ParseError::NoPrefixParseFn(self.current_token.clone()))?;
+        let mut left_expr = prefix(self)?;
 
         while !self.peek_token_is(Token::Semicolon) && precedence < self.peek_precedence() {
-            match self.peek_token {
-                Token::Slash
-                | Token::Plus
-                | Token::Asterisk
-                | Token::Minus
-                | Token::Percent
-                | Token::Caret
-
-                | Token::Eq
-                | Token::NotEq
-                | Token::Lt
-                | Token::Gt
-                | Token::Lte
-                | Token::Gte
-                => {
-                    self.next_token();
-                    match left {
-                        Ok(l) => left = self.parse_infix_expr(l),
-                        Err(err) => return Err(err),
-                    }
-                }
-                Token::LParen => {
-                    self.next_token();
-                    match left {
-                        Ok(l) => left = self.parse_call_expr(l),
-                        Err(err) => return Err(err),
-                    }
-                }
-                _ => return left
+            if let Some(infix) = self.infix_parse_fn() {
+                self.next_token();
+                left_expr = infix(self, left_expr)?;
             }
         }
-        left
+
+        Ok(left_expr)
     }
 
-    fn parse_ident(&mut self) -> Result<Ident, ParseError> {
+    fn prefix_parse_fn(&self) -> Option<PrefixParseFn> {
+        let left = match &self.current_token {
+            Token::Ident(_) => Parser::parse_ident_expr,
+            Token::String(_) => Parser::parse_string_literal,
+            Token::Int(_) => Parser::parse_integer_literal,
+            Token::Float(_) => Parser::parse_float_literal,
+            Token::Bool(_) => Parser::parse_boolean,
+            Token::Minus | Token::Bang => Parser::parse_prefix_expr,
+            Token::LParen => Parser::parse_grouped_expr,
+            Token::If => Parser::parse_if_expr,
+            Token::Function => Parser::parse_func_literal,
+            Token::LBracket => Parser::parse_list_literal,
+            _ => return None
+        };
+
+        Some(left)
+    }
+
+    fn infix_parse_fn(&self) -> Option<InfixParseFn> {
+        Some(match &self.peek_token {
+            Token::Plus
+            | Token::Minus
+            | Token::Asterisk
+            | Token::Slash
+            | Token::Percent
+            | Token::Caret
+            | Token::Eq
+            | Token::NotEq
+            | Token::Lt
+            | Token::Gt
+            | Token::Lte
+            | Token::Gte => Parser::parse_infix_expr,
+            Token::LParen => Parser::parse_call_expr,
+            Token::LBracket => Parser::parse_index_expr,
+            _ => return None
+        })
+    }
+
+    fn parse_ident(&mut self) -> ParseResult<String> {
         match self.current_token {
-            Token::Ident(ref mut ident_str) => Ok(Ident(ident_str.clone())),
+            Token::Ident(ref mut ident_str) => Ok(ident_str.clone()),
             _ => Err(ParseError::InvalidToken(self.current_token.clone()))
         }
     }
 
-    fn parse_string_literal(&self) -> Result<Expression, ParseError> {
+    fn parse_string_literal(&mut self) -> ParseResult<Expression> {
         match &self.current_token {
             Token::String(literal) => Ok(Expression::Literal(Literal::String(literal.clone()))),
             _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
         }
     }
 
-    fn parse_integer_literal(&mut self) -> Result<Expression, ParseError> {
+    fn parse_integer_literal(&mut self) -> ParseResult<Expression> {
         match &self.current_token {
             Token::Int(literal) => {
                 match literal.parse::<IntegerSize>() {
@@ -242,7 +251,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_float_literal(&mut self) -> Result<Expression, ParseError> {
+    fn parse_float_literal(&mut self) -> ParseResult<Expression> {
         match &self.current_token {
             Token::Float(literal) => {
                 match &literal.parse::<FloatSize>() {
@@ -254,21 +263,21 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_boolean(&self) -> Result<Expression, ParseError> {
+    fn parse_boolean(&mut self) -> ParseResult<Expression> {
         match self.current_token {
             Token::Bool(x) => Ok(Expression::Literal(Literal::Bool(x))),
             _ => Err(ParseError::InvalidToken(self.current_token.clone())) // FIXME: unreachable
         }
     }
 
-    fn parse_ident_expr(&mut self) -> Result<Expression, ParseError> {
+    fn parse_ident_expr(&mut self) -> ParseResult<Expression> {
         match self.parse_ident() {
             Ok(ident) => Ok(Expression::Ident(ident)),
             Err(err) => Err(err),
         }
     }
 
-    fn parse_prefix_expr(&mut self) -> Result<Expression, ParseError> {
+    fn parse_prefix_expr(&mut self) -> ParseResult<Expression> {
         let prefix = match self.current_token {
             Token::Bang => Prefix::Bang,
             Token::Minus => Prefix::Minus,
@@ -283,7 +292,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_infix_expr(&mut self, left: Expression) -> Result<Expression, ParseError> {
+    fn parse_infix_expr(&mut self, left: Expression) -> ParseResult<Expression> {
         let infix = match self.current_token {
             Token::Plus => Infix::Plus,
             Token::Minus => Infix::Minus,
@@ -338,7 +347,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_call_expr(&mut self, func: Expression) -> Result<Expression, ParseError> {
+    fn parse_call_expr(&mut self, func: Expression) -> ParseResult<Expression> {
         let args = match self.parse_expression_list(Token::RParen) {
             Ok(args) => args,
             Err(e) => return Err(e)
@@ -350,9 +359,21 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_func_literal(&mut self) -> Result<Expression, ParseError> {
+    fn parse_func_literal(&mut self) -> ParseResult<Expression> {
+        let mut identifier = None;
         if self.expect_peek(Token::LParen).is_err() {
-            return Err(ParseError::InvalidToken(self.peek_token.clone()));
+            if let Token::Ident(_ident) = self.peek_token.clone() {
+                self.next_token(); // skip fn
+                identifier = match self.parse_ident() {
+                    Ok(i) => {
+                        self.next_token(); // skip ident
+                        Some(i)
+                    }
+                    Err(e) => return Err(e)
+                };
+            } else {
+                return Err(ParseError::InvalidToken(self.peek_token.clone()));
+            }
         }
 
         let params = match self.parse_func_params() {
@@ -370,12 +391,13 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Expression::Func {
+            identifier,
             params,
             body,
         })
     }
 
-    fn parse_func_params(&mut self) -> Result<Vec<Ident>, ParseError> {
+    fn parse_func_params(&mut self) -> ParseResult<Vec<String>> {
         let mut idents = vec![];
 
         if self.peek_token_is(Token::RParen) {
@@ -406,7 +428,7 @@ impl<'a> Parser<'a> {
         Ok(idents)
     }
 
-    fn parse_grouped_expr(&mut self) -> Result<Expression, ParseError> {
+    fn parse_grouped_expr(&mut self) -> ParseResult<Expression> {
         self.next_token();
 
         let expr = self.parse_expression(Precedence::Lowest);
@@ -417,7 +439,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_if_expr(&mut self) -> Result<Expression, ParseError> {
+    fn parse_if_expr(&mut self) -> ParseResult<Expression> {
         if self.expect_peek(Token::LParen).is_err() {
             return Err(ParseError::InvalidSyntax(self.peek_token.to_string()));
         }
@@ -458,8 +480,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-
-    fn parse_block_statement(&mut self) -> Result<BlockStatement, ParseError> {
+    fn parse_block_statement(&mut self) -> ParseResult<BlockStatement> {
         self.next_token();
         let mut statements: BlockStatement = vec![];
 
@@ -472,5 +493,21 @@ impl<'a> Parser<'a> {
         }
 
         Ok(statements)
+    }
+
+    fn parse_list_literal(&mut self) -> ParseResult<Expression> {
+        let elems = self.parse_expression_list(Token::RBracket)?;
+        Ok(Expression::List(elems))
+    }
+
+    fn parse_index_expr(&mut self, left: Expression) -> ParseResult<Expression> {
+        self.next_token();
+        let index = self.parse_expression(Precedence::Lowest)?;
+
+        if self.expect_peek(Token::RBracket).is_err() {
+            return Err(ParseError::ExpectedRBracket);
+        }
+
+        Ok(Expression::Index(Box::new(left), Box::new(index)))
     }
 }
