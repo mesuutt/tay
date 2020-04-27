@@ -76,13 +76,13 @@ impl Parser {
         self.peek_token == token
     }
 
-    fn expect_peek(&mut self, token: Token) -> Result<bool, ParseError> {
+    fn expect_peek(&mut self, token: Token, error: ParseError) -> Result<bool, ParseError> {
         // TODO: should be get Token as ref
         if self.peek_token == token {
             self.next_token();
             Ok(true)
         } else {
-            Err(ParseError::InvalidToken(token))
+            Err(error)
         }
     }
 
@@ -128,9 +128,7 @@ impl Parser {
             Err(e) => return Err(e)
         };
 
-        if let Err(e) = self.expect_peek(Token::Assign) {
-            return Err(e);
-        }
+        self.expect_peek(Token::Assign, ParseError::InvalidToken(self.peek_token.clone()))?;
 
         self.next_token();
 
@@ -332,7 +330,8 @@ impl Parser {
             Err(e) => return Err(e)
         }
 
-        while self.expect_peek(Token::Comma).is_ok() {  // Used expect_peek instead peek_token_is
+        while self.peek_token_is(Token::Comma) {  // Used expect_peek instead peek_token_is
+            self.next_token();
             self.next_token(); // skip comma
             match self.parse_expression(Precedence::Lowest) {
                 Ok(expr) => args.push(expr),
@@ -340,11 +339,9 @@ impl Parser {
             }
         }
 
-        if self.expect_peek(end).is_err() {
-            Err(ParseError::InvalidToken(self.peek_token.clone()))
-        } else {
-            Ok(args)
-        }
+        self.expect_peek(end, ParseError::InvalidToken(self.peek_token.clone()))?;
+
+        Ok(args)
     }
 
     fn parse_call_expr(&mut self, func: Expression) -> ParseResult<Expression> {
@@ -361,7 +358,9 @@ impl Parser {
 
     fn parse_func_literal(&mut self) -> ParseResult<Expression> {
         let mut identifier = None;
-        if self.expect_peek(Token::LParen).is_err() {
+        if self.peek_token_is(Token::LParen) {
+            self.next_token();
+        } else {
             if let Token::Ident(_ident) = self.peek_token.clone() {
                 self.next_token(); // skip fn
                 identifier = match self.parse_ident() {
@@ -381,9 +380,7 @@ impl Parser {
             Err(e) => return Err(e),
         };
 
-        if self.expect_peek(Token::LBrace).is_err() {
-            return Err(ParseError::InvalidToken(self.peek_token.clone()));
-        }
+        self.expect_peek(Token::LBrace, ParseError::InvalidToken(self.peek_token.clone()))?;
 
         let body = match self.parse_block_statement() {
             Ok(stmt) => stmt,
@@ -421,9 +418,7 @@ impl Parser {
             }
         }
 
-        if self.expect_peek(Token::RParen).is_err() {
-            return Err(ParseError::InvalidToken(self.peek_token.clone()));
-        }
+        self.expect_peek(Token::RParen, ParseError::InvalidToken(self.peek_token.clone()))?;
 
         Ok(idents)
     }
@@ -432,17 +427,12 @@ impl Parser {
         self.next_token();
 
         let expr = self.parse_expression(Precedence::Lowest);
-        if let Err(err) = self.expect_peek(Token::RParen) {
-            Err(err)
-        } else {
-            expr
-        }
+        self.expect_peek(Token::RParen, ParseError::InvalidToken(self.peek_token.clone()))?;
+        expr
     }
 
     fn parse_if_expr(&mut self) -> ParseResult<Expression> {
-        if self.expect_peek(Token::LParen).is_err() {
-            return Err(ParseError::InvalidSyntax(self.peek_token.to_string()));
-        }
+        self.expect_peek(Token::LParen, ParseError::InvalidSyntax(self.peek_token.to_string()))?;
         self.next_token();
 
         let condition = match self.parse_expression(Precedence::Lowest) {
@@ -450,9 +440,8 @@ impl Parser {
             Err(err) => return Err(err),
         };
 
-        if self.expect_peek(Token::RParen).is_err() || self.expect_peek(Token::LBrace).is_err() {
-            return Err(ParseError::InvalidSyntax(self.peek_token.to_string()));
-        }
+        self.expect_peek(Token::RParen, ParseError::InvalidSyntax(self.peek_token.to_string()))?;
+        self.expect_peek(Token::LBrace, ParseError::InvalidSyntax(self.peek_token.to_string()))?;
 
         let consequence = match self.parse_block_statement() {
             Ok(stmt) => stmt,
@@ -463,10 +452,7 @@ impl Parser {
 
         if self.peek_token_is(Token::Else) {
             self.next_token();
-            if self.expect_peek(Token::LBrace).is_err() {
-                return Err(ParseError::InvalidToken(self.peek_token.clone()));
-            }
-
+            self.expect_peek(Token::LBrace, ParseError::InvalidToken(self.peek_token.clone()))?;
             match self.parse_block_statement() {
                 Ok(stmt) => alternative = Some(stmt),
                 Err(err) => return Err(err),
@@ -504,9 +490,7 @@ impl Parser {
         self.next_token();
         let index = self.parse_expression(Precedence::Lowest)?;
 
-        if self.expect_peek(Token::RBracket).is_err() {
-            return Err(ParseError::ExpectedRBracket);
-        }
+        self.expect_peek(Token::RBracket, ParseError::ExpectedRBracket)?;
 
         Ok(Expression::Index(Box::new(left), Box::new(index)))
     }
