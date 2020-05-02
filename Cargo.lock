@@ -266,7 +266,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tay-rs"
+name = "tay"
 version = "0.1.0"
 dependencies = [
  "pretty_assertions",

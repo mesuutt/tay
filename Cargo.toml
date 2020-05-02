@@ -1,5 +1,5 @@
 [package]
-name = "tay-rs"
+name = "tay"
 version = "0.1.0"
 authors = ["Mesut Tasci <mst.tasci@gmail.com>"]
 edition = "2018"
