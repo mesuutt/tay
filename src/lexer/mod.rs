@@ -77,7 +77,7 @@ impl Lexer {
     fn read_char(&mut self) {
         if self.read_position == self.input.len() {
             self.ch = '\0';
-        } else if let Some(ch) = self.input.chars().nth(self.read_position) {
+        } else if let Some(ch) = self.input.chars().skip(self.read_position).nth(0) {
             self.ch = ch;
         }
         self.position = self.read_position;
@@ -190,7 +190,8 @@ impl Lexer {
             }
             self.read_char();
         }
-        self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
+        // self.input.chars().skip(pos).take(self.position - pos).collect::<String>();
+        self.input[pos..self.position].to_string()
     }
 
     fn read_identifier(&mut self) -> String {
@@ -200,7 +201,8 @@ impl Lexer {
             self.read_char();
         }
 
-        self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
+        // self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
+        self.input[pos..self.position].to_string()
     }
 
     fn read_number(&mut self) -> String {
@@ -209,7 +211,8 @@ impl Lexer {
             self.read_char();
         }
 
-        self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
+        // self.input.chars().skip(pos).take(self.position - pos).collect::<String>()
+        self.input[pos..self.position].to_string()
     }
 
     fn skip_whitespace(&mut self) {
@@ -254,8 +257,8 @@ impl Lexer {
         }
     }
 
-    fn next_ch(&self) -> char {
-        if let Some(ch) = self.input.chars().nth(self.read_position) {
+    fn peek_char(&self) -> char {
+        if let Some(ch) = self.input.chars().skip(self.read_position).nth(0) {
             return ch;
         }
 
@@ -263,6 +266,6 @@ impl Lexer {
     }
 
     fn next_ch_is(&self, ch: char) -> bool {
-        self.next_ch() == ch
+        self.peek_char() == ch
     }
 }
