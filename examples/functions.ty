@@ -1,0 +1,10 @@
+a = 1
+foo = fn(x){x+a}
+
+assert_eq(foo(1), 2)
+
+fn add(a,b) {a+b}
+fn sub(a,b) {a-b}
+fn applyFunc(a,b,func) {func(a,b)}
+
+assert_eq(applyFunc(2,2, add), 4)
