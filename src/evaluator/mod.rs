@@ -10,7 +10,7 @@ pub use env::Env;
 pub use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalErrorKind;
-use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix};
+use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix, IntegerSize};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
@@ -184,7 +184,13 @@ fn eval_integer_infix_expr(operator: &ast::Infix, left_val: i64, right_val: i64)
             if right_val == 0 {
                 return Err(EvalErrorKind::DivideByZero);
             }
-            Object::Int(left_val / right_val)
+
+            let result = left_val as FloatSize / right_val  as FloatSize;
+            if result.fract() == 0.0 {
+                Object::Int(result as IntegerSize)
+            } else {
+                Object::Float(result)
+            }
         }
         ast::Infix::Percent => Object::Int(left_val % right_val),
         ast::Infix::Exponent => {
