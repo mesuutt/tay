@@ -2,7 +2,6 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::evaluator::{eval, Env, Object};
 use rustyline::Editor;
-use rustyline::validate::MatchingBracketValidator;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
 use std::rc::Rc;

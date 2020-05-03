@@ -1,5 +1,6 @@
 use crate::evaluator::object::{Object, EvalResult, assert_argument_count};
 use crate::evaluator::error::EvalErrorKind;
+use crate::evaluator::is_truthy;
 
 pub struct Builtin {
     name: &'static str,
@@ -18,6 +19,14 @@ pub const BUILTINS: &[Builtin] = &[
     Builtin{
         name: "println",
         builtin: Object::Builtin(println_fn)
+    },
+    Builtin{
+        name: "assert",
+        builtin: Object::Builtin(assert_fn)
+    },
+    Builtin{
+        name: "assert_eq",
+        builtin: Object::Builtin(assert_eq_fn)
     }
 ];
 
@@ -51,4 +60,23 @@ fn println_fn(args: Vec<Object>) -> EvalResult {
     assert_argument_count(1, &args)?;
     println!("{}", args[0]);
     Ok(Object::Null)
+}
+
+fn assert_fn(args: Vec<Object>) -> EvalResult {
+    assert_argument_count(2, &args)?;
+    if !is_truthy(&args[0].clone()) {
+        Err(EvalErrorKind::AssertionError(args[1].clone()))
+    } else {
+        Ok(Object::Null)
+    }
+}
+
+fn assert_eq_fn(args: Vec<Object>) -> EvalResult {
+    assert_argument_count(2, &args)?;
+    if args[0] != args[1] {
+        Err(EvalErrorKind::AssertionError(Object::String(format!("{} == {}", args[0], args[1]))))
+    } else {
+        Ok(Object::Null)
+    }
+
 }
