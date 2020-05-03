@@ -1,3 +1,4 @@
+// vi: ft=rust
 a = 1
 foo = fn(x){x+a}
 

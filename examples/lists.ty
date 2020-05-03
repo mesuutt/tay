@@ -1,3 +1,4 @@
+// vi: ft=rust
 assert_eq([1 + 2 ,3 * 4], [3, 12])
 my_list = [1 + 2 ,3 * 4, fn(x){x * 2}]
 

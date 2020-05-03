@@ -1,3 +1,4 @@
+// vi: ft=rust
 // We can create variables with or without let keyword.
 
 // integers
