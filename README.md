@@ -1,8 +1,9 @@
 ## tay
 
-An implementation of [monkeylang](https://monkeylang.org/).
+Interpreted programming language based on https://interpreterbook.com/.
 
 ![](https://mesuutt.com/static/tay/tay-lang.svg)
+
 You can look at [examples](https://github.com/mesuutt/tay/tree/master/examples) directory for more usage examples.
 
 ##### TODO
@@ -12,7 +13,7 @@ You can look at [examples](https://github.com/mesuutt/tay/tree/master/examples) 
 - [ ] Error reporting
 - [ ] Loops
 - [ ] Python like `*args` and `**kwargs`
-- [ ] Imports
+- [ ] Modules
 - [ ] Js like arrow functions
 - [ ] Standard libraries
 - [ ] Playground
