@@ -1,5 +1,4 @@
 use std::fmt;
-use crate::parser::ParseError;
 
 pub type IntegerSize = i64;
 pub type FloatSize = f64;
@@ -184,6 +183,7 @@ impl fmt::Display for Literal {
 
 pub type BlockStatement = Vec<Statement>;
 
+#[derive(Clone)] // Clone added for benchmarking evaluator
 pub struct Program {
     pub statements: BlockStatement,
     // pub errors: Vec<ParseError>,
