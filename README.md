@@ -14,7 +14,7 @@ You can look at [examples](https://github.com/mesuutt/tay/tree/master/examples) 
 # Start REPL
 cargo run
 
-# Execute file
+# Run file
 cargo run examples/fib.ty
 
 # Build

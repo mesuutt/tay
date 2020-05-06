@@ -36,21 +36,24 @@ pub fn start() {
             Ok(line) => {
                 editor.add_history_entry(line.as_str());
                 let program = Parser::new(Lexer::new(line)).parse();
-                if !program.errors.is_empty() {
-                    for err in program.errors.iter() {
-                        println!("Parse error: {}", err);
-                    };
-                    continue;
-                }
-                match eval(program, env.clone()) {
-                    Ok(obj) => {
-                        match obj {
-                            Object::Null => {},
-                            _ => println!("{}", obj),
-                        }
+                match program {
+                   Ok(p) => {
+                       match eval(p, env.clone()) {
+                           Ok(obj) => {
+                               match obj {
+                                   Object::Null => {},
+                                   _ => println!("{}", obj),
+                               }
+                           }
+                           Err(e) => println!("EvalError: {}", e)
+                       }
+                   },
+                    Err(e) => {
+                        println!("ParseError: {}", e);
+                        continue
                     }
-                    Err(e) => println!("ERROR: {}", e)
                 }
+
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

@@ -24,8 +24,7 @@ impl fmt::Display for ParseError {
     }
 }
 
-
-type ParseResult<T> = Result<T, ParseError>;
+pub(self) type ParseResult<T> = Result<T, ParseError>;
 type PrefixParseFn = fn(&mut Parser) -> ParseResult<Expression>;
 type InfixParseFn = fn(&mut Parser, Expression) -> ParseResult<Expression>;
 
@@ -53,18 +52,16 @@ impl Parser {
         self.current_token = mem::replace(&mut self.peek_token, self.lexer.next_token());
     }
 
-    pub fn parse(&mut self) -> Program {
+    pub fn parse(&mut self) -> ParseResult<Program> {
         let mut statements = vec![];
-        let mut errors = vec![];
         while !self.current_token_is(Token::EndOfFile) {
             match self.parse_statement() {
                 Ok(stmt) => statements.push(stmt),
-                Err(e) => errors.push(e)
+                Err(e) => return Err(e)
             }
             self.next_token();
         }
-
-        Program { statements, errors }
+        Ok(Program { statements })
     }
 
     fn current_token_is(&self, token: Token) -> bool {

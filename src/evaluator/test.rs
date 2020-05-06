@@ -11,7 +11,7 @@ mod test {
     use crate::evaluator::object::EvalResult;
 
     fn test_eval(input: &str) -> EvalResult {
-        let prog = Parser::new(Lexer::new(input.to_owned())).parse();
+        let prog = Parser::new(Lexer::new(input.to_owned())).parse().unwrap();
         let env = Rc::new(RefCell::new(Env::new()));
         eval(prog, env)
     }
