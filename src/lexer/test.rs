@@ -34,6 +34,7 @@ ident_with_num_1
 [1, 2]
 // comment 1
 /* comment 2 */
+{"foo": "bar"}
 "#;
         let expected = vec![
             Token::Let,
@@ -99,6 +100,11 @@ ident_with_num_1
             Token::Comma,
             Token::Int("2".to_string()),
             Token::RBracket,
+            Token::LBrace,
+            Token::String("foo".to_string()),
+            Token::Colon,
+            Token::String("bar".to_string()),
+            Token::RBrace,
             Token::EndOfFile,
         ];
 
