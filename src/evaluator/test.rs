@@ -157,6 +157,7 @@ mod test {
         expect_values(vec![
             (r#"len("")"#, "0"),
             (r#"len("four")"#, "4"),
+            ("assert(true)", ""),
             ("assert(true, true)", ""),
             ("assert_eq(1, 1)", ""),
             (r##"assert_eq("str1", "str1")"##, ""),
@@ -164,10 +165,11 @@ mod test {
         expect_error(vec![
             ("len(1)", "unsupported argument to len: INTEGER"),
             (r#"len("one", "two")"#, "wrong number of arguments, want=1, got=2"),
-            ("assert(true)", "wrong number of arguments, want=2, got=1"),
-            (r#"assert(false, "msg")"#, "assertion error: msg"),
-            ("assert_eq(1, 2)", "assertion error: 1 == 2"),
-            ("assert_eq(1, 2, 3)", "wrong number of arguments, want=2, got=3"),
+            (r#"assert(false, "msg")"#, r#"assertion error: msg"#),
+            ("assert(false)", "assertion error: "),
+            ("assert_eq(1, 2)", "assertion error: "),
+            (r#"assert_eq(1, 2, "msg")"#, "assertion error: msg"),
+            ("assert_eq(1, 2, 3, 4)", "wrong number of arguments, want=2, got=4"),
         ]);
     }
 

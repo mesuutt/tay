@@ -74,3 +74,12 @@ pub fn assert_argument_count(expected: usize, args: &[Object]) -> Result<(), Eva
         Ok(())
     }
 }
+
+pub fn assert_argument_count_range(expected: Range<usize>, args: &[Object]) -> Result<(), EvalErrorKind> {
+    let arg_len = args.len();
+    if arg_len < expected.start || arg_len > expected.end {
+        Err(EvalErrorKind::WrongArgumentCount(expected.start, args.len()))
+    } else {
+        Ok(())
+    }
+}
