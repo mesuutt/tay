@@ -15,6 +15,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
 use crate::evaluator::builtins::lookup_builtin;
+use std::collections::HashMap;
+use object::HashKey;
 
 
 pub fn eval(program: Program, env: Rc<RefCell<Env>>) -> EvalResult {
@@ -79,6 +81,9 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
         }
         Expression::Index(left, index) => {
             eval_index_expr(left, index, env)
+        }
+        Expression::Hash(pairs) => {
+            eval_hash_literal(pairs, env)
         }
     }
 }
@@ -516,6 +521,18 @@ fn eval_index_expr(left: &Expression, index: &Expression, env: Rc<RefCell<Env>>)
         }
         (l, i) => return Err(EvalErrorKind::UnknownIndexOperator(l, i))
     }
+}
+
+fn eval_hash_literal(pairs: &[(Expression, Expression)], env: Rc<RefCell<Env>>) -> EvalResult {
+    let mut map = HashMap::new();
+    for (k, v) in pairs {
+        let key = eval_expr(k, env.clone())?;
+        let val = eval_expr(v, env.clone())?;
+        let hash_key = HashKey::from_object(&key)?;
+        map.insert(hash_key, val);
+
+    }
+    Ok(Object::Hash(map))
 }
 
 fn is_truthy(obj: &Object) -> bool {

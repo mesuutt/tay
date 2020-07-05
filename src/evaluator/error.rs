@@ -19,6 +19,7 @@ pub enum EvalErrorKind {
     UnknownIndexOperator(Object, Object),
     KeyError(Object),
     AssertionError(/*message*/Object),
+    UnsupportedHashKey(Object),
 }
 
 impl fmt::Display for EvalErrorKind {
@@ -55,6 +56,9 @@ impl fmt::Display for EvalErrorKind {
             }
             EvalErrorKind::AssertionError(message) => {
                 write!(f, "assertion error: {}", message)
+            }
+            EvalErrorKind::UnsupportedHashKey(obj) => {
+                write!(f, "unsupported hash key {}", obj)
             }
         }
     }

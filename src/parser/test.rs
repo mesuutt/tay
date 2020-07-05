@@ -1,8 +1,8 @@
 #[cfg(test)]
 pub mod test {
+    use crate::ast::{Expression, Infix, Literal, Prefix, Program, Statement};
     use crate::lexer::Lexer;
-    use crate::parser::{Parser, ParseResult};
-    use crate::ast::{Statement, Literal, Expression, Prefix, Infix, Program};
+    use crate::parser::{ParseResult, Parser};
     use pretty_assertions::assert_eq;
     use test::Bencher;
 
@@ -192,7 +192,21 @@ pub mod test {
         let tests = vec![
             ("[1, 2 * 2, 3 + 3]", "[1, (2 * 2), (3 + 3)]"),
             ("[]", "[]"),
-            ("my_list[1]", "(my_list[1])")
+            ("my_list[1]", "(my_list[1])"),
+        ];
+
+        for &(input, expected) in tests.iter() {
+            let program = parse(input).unwrap();
+            assert_eq!(program.to_string(), expected)
+        }
+    }
+
+    #[test]
+    fn hash_literal() {
+        let tests = vec![
+            ("{}", "{}"),
+            ("{1: true, false: 2}", "{1: true, false: 2}"),
+            (r#"{"one": 1, "two": 2}"#, r#"{"one": 1, "two": 2}"#)
         ];
 
         for &(input, expected) in tests.iter() {

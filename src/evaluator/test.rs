@@ -188,6 +188,16 @@ mod test {
         ])
     }
 
+    #[test]
+    fn hash_literal() {
+        expect_values(vec![
+            (
+                r#"{"one": 10 - 9, "two" : 1+1, "th"+"ree": 6/2, 4: 4, true: 5, false: 6}"#,
+                r#"{"one": 1, "three": 3, "two": 2, 4: 4, false: 6, true: 5}"#
+            )
+        ])
+    }
+
 
     fn expect_values(tests: Vec<(&str, &str)>) {
         for (input, expected) in tests {
