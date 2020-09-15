@@ -4,7 +4,6 @@ pub mod test {
     use crate::lexer::Lexer;
     use crate::parser::{ParseResult, Parser};
     use pretty_assertions::assert_eq;
-    use test::Bencher;
 
     fn parse(input: &str) -> ParseResult<Program> {
         Parser::new(Lexer::new(input.to_owned())).parse()
