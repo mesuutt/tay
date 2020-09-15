@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test {
-    use test::Bencher;
     use crate::lexer::{Token, Lexer};
     use pretty_assertions::assert_eq;
 
@@ -162,30 +161,4 @@ let b = bar;
         }
     }
 
-    #[bench]
-    fn bench_lexer(b: &mut Bencher) {
-        let input = r#"
-           fn fibonacci(x) {
-                if (x == 0) {
-                    0
-                } else {
-                    if (x == 1) {
-                        1
-                    } else {
-                        fibonacci(x - 1) + fibonacci(x - 2)
-                    }
-                }
-           }
-           "#.to_string();
-
-        b.iter(|| {
-            let mut lex = Lexer::new(input.clone());
-            loop {
-                let t = lex.next_token();
-                if let Token::EndOfFile = t {
-                    break;
-                }
-            }
-        });
-    }
 }

@@ -4,7 +4,6 @@ pub mod test {
     use crate::parser::{Parser, ParseResult};
     use crate::ast::{Statement, Literal, Expression, Prefix, Infix, Program};
     use pretty_assertions::assert_eq;
-    use test::Bencher;
 
     fn parse(input: &str) -> ParseResult<Program> {
         Parser::new(Lexer::new(input.to_owned())).parse()
@@ -201,24 +200,4 @@ pub mod test {
         }
     }
 
-    #[bench]
-    fn bench_parser(b: &mut Bencher) {
-        let input = r#"
-           fn fibonacci(x) {
-                if (x == 0) {
-                    0
-                } else {
-                    if (x == 1) {
-                        1
-                    } else {
-                        fibonacci(x - 1) + fibonacci(x - 2)
-                    }
-                }
-           }
-           "#.to_string();
-
-        b.iter(|| {
-            Parser::new(Lexer::new(input.clone())).parse().unwrap();
-        });
-    }
 }

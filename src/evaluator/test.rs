@@ -9,7 +9,6 @@ mod test {
     use std::cell::RefCell;
     use pretty_assertions::assert_eq;
     use crate::evaluator::object::EvalResult;
-    use test::Bencher;
 
     fn test_eval(input: &str) -> EvalResult {
         let prog = Parser::new(Lexer::new(input.to_owned())).parse().unwrap();
@@ -213,27 +212,4 @@ mod test {
         }
     }
 
-    #[bench]
-    fn bench_eval(b: &mut Bencher) {
-        let input = r#"
-           fn fibonacci(x) {
-                if (x == 0) {
-                    0
-                } else {
-                    if (x == 1) {
-                        1
-                    } else {
-                        fibonacci(x - 1) + fibonacci(x - 2)
-                    }
-                }
-           }
-           fibonacci(20)
-           "#.to_string();
-
-        let program = Parser::new(Lexer::new(input.clone())).parse().unwrap();
-        b.iter(|| {
-            let env= Rc::new(RefCell::new(Env::new()));
-            eval(program.clone(), env)
-        });
-    }
 }
