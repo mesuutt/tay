@@ -1,6 +1,6 @@
 ## tay
 
-Interpreted programming language based on https://interpreterbook.com/.
+Programming language writing experiment for learning interpreters and VMs.
 
 ![](https://mesuutt.com/static/tay/tay-lang.svg)
 

@@ -1,4 +1,5 @@
 use std::fmt;
+use std::collections::HashMap;
 
 pub type IntegerSize = i64;
 pub type FloatSize = f64;
@@ -64,6 +65,7 @@ pub enum Expression {
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
     List(Vec<Expression>),
+    Hash(Vec<(Expression, Expression)>),
     // left can be an ident, a list, a func call etc.
     Index(/*left*/Box<Expression>, /*index*/Box<Expression>),
 
@@ -136,6 +138,10 @@ impl fmt::Display for Expression {
                     )
                 }
             }
+            Expression::Hash(pairs) => {
+                let pair_list = pairs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>();
+                write!(f, "{{{}}}", pair_list.join(", "))
+            }
         }
     }
 }
@@ -175,7 +181,7 @@ impl fmt::Display for Literal {
         match self {
             Literal::Int(x) => write!(f, "{}", x),
             Literal::Float(x) => write!(f, "{}", x),
-            Literal::String(x) => write!(f, "{}", x),
+            Literal::String(x) => write!(f, "\"{}\"", x),
             Literal::Bool(x) => write!(f, "{}", x),
         }
     }
