@@ -1,5 +1,4 @@
 use std::fmt;
-use std::collections::HashMap;
 
 pub type IntegerSize = i64;
 pub type FloatSize = f64;
@@ -119,9 +118,9 @@ impl fmt::Display for Expression {
                 write!(f, "{}({})", func, arg_list.join(", "))
             }
             Expression::Func { identifier: name, params, body } => {
-                let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                let statement_list = body.into_iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or("".to_string()), param_list.join(", "), statement_list.join(""))
+                let param_list = params.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+                let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or_else(|| "".to_string()), param_list.join(", "), statement_list.join(""))
             }
 
             Expression::If { condition, consequence, alternative } => {

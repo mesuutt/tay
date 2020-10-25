@@ -6,7 +6,6 @@ use crate::ast::{
     Program, Statement,
 };
 use crate::lexer::{Lexer, Token};
-use std::collections::HashMap;
 use std::{fmt, mem};
 
 #[derive(PartialEq, Debug)]
@@ -367,19 +366,17 @@ impl Parser {
         let mut identifier = None;
         if self.peek_token_is(Token::LParen) {
             self.next_token();
+        } else if let Token::Ident(_ident) = self.peek_token.clone() {
+            self.next_token(); // skip fn
+            identifier = match self.parse_ident() {
+                Ok(i) => {
+                    self.next_token(); // skip ident
+                    Some(i)
+                }
+                Err(e) => return Err(e),
+            };
         } else {
-            if let Token::Ident(_ident) = self.peek_token.clone() {
-                self.next_token(); // skip fn
-                identifier = match self.parse_ident() {
-                    Ok(i) => {
-                        self.next_token(); // skip ident
-                        Some(i)
-                    }
-                    Err(e) => return Err(e),
-                };
-            } else {
-                return Err(ParseError::InvalidToken(self.peek_token.clone()));
-            }
+            return Err(ParseError::InvalidToken(self.peek_token.clone()));
         }
 
         let params = match self.parse_func_params() {

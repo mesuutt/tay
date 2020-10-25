@@ -1,13 +1,11 @@
-use crate::ast::{BlockStatement, Expression, FloatSize, IntegerSize};
+use crate::ast::{BlockStatement, FloatSize, IntegerSize};
 use crate::evaluator::error::EvalErrorKind;
 use crate::evaluator::Env;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::{Error, Formatter};
 use std::rc::Rc;
 use std::ops::Range;
-use std::process::exit;
 
 pub type EvalResult = Result<Object, EvalErrorKind>;
 pub type BuiltinFunc = fn(Vec<Object>) -> EvalResult;
@@ -43,7 +41,7 @@ impl fmt::Display for Object {
             Object::Func(params, _body, _) => {
                 let param_list = params
                     .iter()
-                    .map(|s| format!("{}", s))
+                    .map(|s| s.to_string())
                     .collect::<Vec<String>>();
                 // let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
                 // write!(f, "fn ({}) {{\n{}\n}}", param_list.join(", "), statement_list.join(""))

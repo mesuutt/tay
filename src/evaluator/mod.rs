@@ -166,7 +166,7 @@ fn eval_literal(literal: &ast::Literal) -> Object {
     }
 }
 
-fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
+fn eval_ident(ident: &str, env: Rc<RefCell<Env>>) -> EvalResult {
     // If we use borrow() instead borrow_mut() value removing after return.
     match env.borrow_mut().get(&ident) {
         Some(val) => Ok(val),
@@ -174,7 +174,7 @@ fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
             if let Some(builtin) = lookup_builtin(ident) {
                 Ok(builtin)
             } else {
-                Err(EvalErrorKind::UndefinedIdent(ident.clone()))
+                Err(EvalErrorKind::UndefinedIdent(ident.to_string()))
             }
         }
     }
@@ -463,9 +463,9 @@ fn eval_string_infix_expr(operator: &ast::Infix, left_val: &str, right_val: &str
     Ok(result)
 }
 
-fn eval_let_statement(ident: &String, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
+fn eval_let_statement(ident: &str, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
     let value = eval_expr(expr, env.clone())?;
-    env.borrow_mut().set(ident.clone(), &value);
+    env.borrow_mut().set(ident.to_string(), &value);
     Ok(Object::Null)
 }
 
@@ -510,16 +510,16 @@ fn extend_func_env(params: Vec<String>, args: &[Object], parent_env: Rc<RefCell<
 
 fn eval_index_expr(left: &Expression, index: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
     let left_evalulated = eval_expr(left, env.clone())?;
-    let index_evaluated = eval_expr(index, env.clone())?;
+    let index_evaluated = eval_expr(index, env)?;
 
     match (left_evalulated, index_evaluated) {
         (Object::List(elems), Object::Int(index)) => {
             match elems.get(index as usize) {
                 Some(e) => Ok(e.clone()),
-                None => return Err(EvalErrorKind::KeyError(Object::Int(index)))
+                None => Err(EvalErrorKind::KeyError(Object::Int(index)))
             }
         }
-        (l, i) => return Err(EvalErrorKind::UnknownIndexOperator(l, i))
+        (l, i) => Err(EvalErrorKind::UnknownIndexOperator(l, i))
     }
 }
 
