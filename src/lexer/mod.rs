@@ -35,8 +35,7 @@ impl Lexer {
         lexer.read_char(); // initialize l.ch, l.position and l.read_position
         lexer
     }
-
-
+    
     // Get the range for the current token
     pub fn span(&self) -> Span {
         self.token_start..self.token_end

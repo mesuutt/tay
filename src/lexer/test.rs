@@ -192,7 +192,7 @@ let
 
         let mut lex = Lexer::new(input.to_string());
         for (_span, slice) in expected {
-            let t = lex.next_token();
+            lex.next_token();
             assert_eq!(lex.line_slice(), slice);
         }
     }
