@@ -10,11 +10,13 @@ pub use env::Env;
 pub use object::Object;
 use crate::ast;
 use crate::evaluator::error::EvalErrorKind;
-use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix};
+use crate::ast::{FloatSize, Expression, BlockStatement, Program, Statement, Infix, Prefix, IntegerSize};
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::evaluator::object::EvalResult;
 use crate::evaluator::builtins::lookup_builtin;
+use std::collections::HashMap;
+use object::HashKey;
 
 
 pub fn eval(program: Program, env: Rc<RefCell<Env>>) -> EvalResult {
@@ -79,6 +81,9 @@ fn eval_expr(expr: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
         }
         Expression::Index(left, index) => {
             eval_index_expr(left, index, env)
+        }
+        Expression::Hash(pairs) => {
+            eval_hash_literal(pairs, env)
         }
     }
 }
@@ -161,7 +166,7 @@ fn eval_literal(literal: &ast::Literal) -> Object {
     }
 }
 
-fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
+fn eval_ident(ident: &str, env: Rc<RefCell<Env>>) -> EvalResult {
     // If we use borrow() instead borrow_mut() value removing after return.
     match env.borrow_mut().get(&ident) {
         Some(val) => Ok(val),
@@ -169,7 +174,7 @@ fn eval_ident(ident: &String, env: Rc<RefCell<Env>>) -> EvalResult {
             if let Some(builtin) = lookup_builtin(ident) {
                 Ok(builtin)
             } else {
-                Err(EvalErrorKind::UndefinedIdent(ident.clone()))
+                Err(EvalErrorKind::UndefinedIdent(ident.to_string()))
             }
         }
     }
@@ -184,7 +189,13 @@ fn eval_integer_infix_expr(operator: &ast::Infix, left_val: i64, right_val: i64)
             if right_val == 0 {
                 return Err(EvalErrorKind::DivideByZero);
             }
-            Object::Int(left_val / right_val)
+
+            let result = left_val as FloatSize / right_val  as FloatSize;
+            if result.fract() == 0.0 {
+                Object::Int(result as IntegerSize)
+            } else {
+                Object::Float(result)
+            }
         }
         ast::Infix::Percent => Object::Int(left_val % right_val),
         ast::Infix::Exponent => {
@@ -452,9 +463,9 @@ fn eval_string_infix_expr(operator: &ast::Infix, left_val: &str, right_val: &str
     Ok(result)
 }
 
-fn eval_let_statement(ident: &String, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
+fn eval_let_statement(ident: &str, expr: &ast::Expression, env: Rc<RefCell<Env>>) -> EvalResult {
     let value = eval_expr(expr, env.clone())?;
-    env.borrow_mut().set(ident.clone(), &value);
+    env.borrow_mut().set(ident.to_string(), &value);
     Ok(Object::Null)
 }
 
@@ -499,17 +510,29 @@ fn extend_func_env(params: Vec<String>, args: &[Object], parent_env: Rc<RefCell<
 
 fn eval_index_expr(left: &Expression, index: &Expression, env: Rc<RefCell<Env>>) -> EvalResult {
     let left_evalulated = eval_expr(left, env.clone())?;
-    let index_evaluated = eval_expr(index, env.clone())?;
+    let index_evaluated = eval_expr(index, env)?;
 
     match (left_evalulated, index_evaluated) {
         (Object::List(elems), Object::Int(index)) => {
             match elems.get(index as usize) {
                 Some(e) => Ok(e.clone()),
-                None => return Err(EvalErrorKind::KeyError(Object::Int(index)))
+                None => Err(EvalErrorKind::KeyError(Object::Int(index)))
             }
         }
-        (l, i) => return Err(EvalErrorKind::UnknownIndexOperator(l, i))
+        (l, i) => Err(EvalErrorKind::UnknownIndexOperator(l, i))
     }
+}
+
+fn eval_hash_literal(pairs: &[(Expression, Expression)], env: Rc<RefCell<Env>>) -> EvalResult {
+    let mut map = HashMap::new();
+    for (k, v) in pairs {
+        let key = eval_expr(k, env.clone())?;
+        let val = eval_expr(v, env.clone())?;
+        let hash_key = HashKey::from_object(&key)?;
+        map.insert(hash_key, val);
+
+    }
+    Ok(Object::Hash(map))
 }
 
 fn is_truthy(obj: &Object) -> bool {

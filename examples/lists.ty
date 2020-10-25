@@ -1,0 +1,6 @@
+// vi: ft=rust
+assert_eq([1 + 2 ,3 * 4], [3, 12])
+my_list = [1 + 2 ,3 * 4, fn(x){x * 2}]
+
+assert_eq(my_list[1], 12)
+assert_eq(my_list[2](2), 4)

@@ -1,5 +1,4 @@
 use std::fmt;
-use crate::parser::ParseError;
 
 pub type IntegerSize = i64;
 pub type FloatSize = f64;
@@ -65,6 +64,7 @@ pub enum Expression {
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
     List(Vec<Expression>),
+    Hash(Vec<(Expression, Expression)>),
     // left can be an ident, a list, a func call etc.
     Index(/*left*/Box<Expression>, /*index*/Box<Expression>),
 
@@ -118,9 +118,9 @@ impl fmt::Display for Expression {
                 write!(f, "{}({})", func, arg_list.join(", "))
             }
             Expression::Func { identifier: name, params, body } => {
-                let param_list = params.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                let statement_list = body.into_iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
-                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or("".to_string()), param_list.join(", "), statement_list.join(""))
+                let param_list = params.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+                let statement_list = body.iter().map(|s| format!("{}", s)).collect::<Vec<String>>();
+                write!(f, "fn {}({}) {{\n{}\n}}", name.clone().unwrap_or_else(|| "".to_string()), param_list.join(", "), statement_list.join(""))
             }
 
             Expression::If { condition, consequence, alternative } => {
@@ -136,6 +136,10 @@ impl fmt::Display for Expression {
                            consequence.iter().map(|x| format!("{}", x)).collect::<Vec<String>>().join("")
                     )
                 }
+            }
+            Expression::Hash(pairs) => {
+                let pair_list = pairs.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<String>>();
+                write!(f, "{{{}}}", pair_list.join(", "))
             }
         }
     }
@@ -176,7 +180,7 @@ impl fmt::Display for Literal {
         match self {
             Literal::Int(x) => write!(f, "{}", x),
             Literal::Float(x) => write!(f, "{}", x),
-            Literal::String(x) => write!(f, "{}", x),
+            Literal::String(x) => write!(f, "\"{}\"", x),
             Literal::Bool(x) => write!(f, "{}", x),
         }
     }
@@ -184,9 +188,9 @@ impl fmt::Display for Literal {
 
 pub type BlockStatement = Vec<Statement>;
 
+#[derive(Clone)] // Clone added for benchmarking evaluator
 pub struct Program {
     pub statements: BlockStatement,
-    pub error: Option<ParseError>,
 }
 
 impl fmt::Display for Program {

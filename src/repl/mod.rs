@@ -2,7 +2,6 @@ use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::evaluator::{eval, Env, Object};
 use rustyline::Editor;
-use rustyline::validate::MatchingBracketValidator;
 use rustyline::error::ReadlineError;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -37,20 +36,25 @@ pub fn start() {
             Ok(line) => {
                 editor.add_history_entry(line.as_str());
                 let program = Parser::new(Lexer::new(line)).parse();
-                if let Some(err) = program.error {
-                    println!("Parse error:{}", err);
-                    continue;
+
+                match program {
+                   Ok(p) => {
+                       match eval(p, env.clone()) {
+                           Ok(obj) => {
+                               match obj {
+                                   Object::Null => {},
+                                   _ => println!("{}", obj),
+                               }
+                           }
+                           Err(e) => println!("EvalError: {}", e)
+                       }
+                   },
+                    Err(e) => {
+                        println!("ParseError: {}", e);
+                        continue
+                    }
                 }
 
-                match eval(program, env.clone()) {
-                    Ok(obj) => {
-                        match obj {
-                            Object::Null => {},
-                            _ => println!("{}", obj),
-                        }
-                    }
-                    Err(e) => println!("ERROR: {}", e)
-                }
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

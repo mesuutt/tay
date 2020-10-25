@@ -22,7 +22,7 @@ fn main() {
     }
 }
 
-fn eval_file(filename: &str)  {
+fn eval_file(filename: &str) {
     let mut file = match File::open(filename) {
         Ok(f) => f,
         Err(_) => {
@@ -39,13 +39,13 @@ fn eval_file(filename: &str)  {
 
     let env = Env::new();
     let program = Parser::new(Lexer::new(source)).parse();
-    if let Some(err) = program.error {
-        println!("Parse error: {}", err);
-        process::exit(1);
-    }
-
-    match eval(program, Rc::new(RefCell::new(env))) {
-        Ok(obj) => println!("{}", obj),
-        Err(e) => println!("ERROR: {}", e)
+    match program {
+        Ok(p) => {
+            match eval(p, Rc::new(RefCell::new(env))) {
+                Ok(obj) => println!("{}", obj),
+                Err(e) => println!("ERROR: {}", e)
+            }
+        },
+        Err(e) => println!("Parse error: {}", e)
     }
 }

@@ -124,6 +124,7 @@ impl Lexer {
             '}' => token = Token::RBrace,
             '[' => token = Token::LBracket,
             ']' => token = Token::RBracket,
+            ':' => token = Token::Colon,
             '=' => {
                 if self.next_ch_is('=') {
                     self.read_char();

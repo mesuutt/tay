@@ -11,7 +11,7 @@ mod test {
     use crate::evaluator::object::EvalResult;
 
     fn test_eval(input: &str) -> EvalResult {
-        let prog = Parser::new(Lexer::new(input.to_owned())).parse();
+        let prog = Parser::new(Lexer::new(input.to_owned())).parse().unwrap();
         let env = Rc::new(RefCell::new(Env::new()));
         eval(prog, env)
     }
@@ -39,6 +39,7 @@ mod test {
             ("5.2 * 5.1", 26.52),
             ("2 * 4.2", 8.4),
             ("4.2 * 2", 8.4),
+            ("5 / 2", 2.5),
         ];
 
         for (input, expected) in expected {
@@ -155,10 +156,19 @@ mod test {
         expect_values(vec![
             (r#"len("")"#, "0"),
             (r#"len("four")"#, "4"),
+            ("assert(true)", ""),
+            ("assert(true, true)", ""),
+            ("assert_eq(1, 1)", ""),
+            (r##"assert_eq("str1", "str1")"##, ""),
         ]);
         expect_error(vec![
             ("len(1)", "unsupported argument to len: INTEGER"),
             (r#"len("one", "two")"#, "wrong number of arguments, want=1, got=2"),
+            (r#"assert(false, "msg")"#, r#"assertion error: msg"#),
+            ("assert(false)", "assertion error: "),
+            ("assert_eq(1, 2)", "assertion error: "),
+            (r#"assert_eq(1, 2, "msg")"#, "assertion error: msg"),
+            ("assert_eq(1, 2, 3, 4)", "wrong number of arguments, want=2, got=4"),
         ]);
     }
 
@@ -174,6 +184,16 @@ mod test {
 
         expect_error(vec![
             ("[1][-1]", "key error: -1"),
+        ])
+    }
+
+    #[test]
+    fn hash_literal() {
+        expect_values(vec![
+            (
+                r#"{"one": 10 - 9, "two" : 1+1, "th"+"ree": 6/2, 4: 4, true: 5, false: 6}"#,
+                r#"{"one": 1, "three": 3, "two": 2, 4: 4, false: 6, true: 5}"#
+            )
         ])
     }
 
@@ -203,4 +223,5 @@ mod test {
             }
         }
     }
+
 }

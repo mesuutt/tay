@@ -19,6 +19,7 @@ pub enum Token {
     Slash,
     Percent,
     Caret,
+    Colon,
 
     Gt,
     Lt,
@@ -63,6 +64,7 @@ impl fmt::Display for Token {
             Token::Slash => write!(f, "/"),
             Token::Caret => write!(f, "^"),
             Token::Percent => write!(f, "%"),
+            Token::Colon => write!(f, ":"),
 
             Token::Lt => write!(f, "<"),
             Token::Gt => write!(f, ">"),

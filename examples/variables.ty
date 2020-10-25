@@ -1,0 +1,24 @@
+// vi: ft=rust
+// We can create variables with or without let keyword.
+
+// integers
+num1 = 2
+num2 = 4
+assert_eq(num1 ^ num2, 16)
+
+// floats
+float1 = 0.1
+float2 = 0.2
+assert_eq(float1 + float2, 0.30000000000000004)
+
+// strings
+str1 = "hello"
+str2 = "world"
+
+assert_eq(str1 + " " + str2, "hello world")
+
+/*
+multi
+line
+comment
+*/
