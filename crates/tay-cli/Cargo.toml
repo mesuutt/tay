@@ -1,0 +1,9 @@
+[package]
+name = "tay-cli"
+version = "0.2.0"
+authors = ["Mesut Tasci <mesut.tasci@trendyol.com>"]
+edition = "2018"
+
+[dependencies]
+tay = {path = "../tay"}
+rustyline = "6.1.0"
