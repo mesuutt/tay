@@ -1,6 +1,6 @@
 ## tay
 
-Programming language writing experiment for learning interpreters and VMs.
+Programming language writing experiment for learning interpreters and VMs based on https://interpreterbook.com/.
 
 ![](https://mesuutt.com/static/tay/tay-lang.svg)
 
