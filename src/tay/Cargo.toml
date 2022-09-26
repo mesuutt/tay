@@ -9,7 +9,10 @@ edition = "2018"
 [dev-dependencies]
 pretty_assertions = "1.3.0"
 criterion = "0.4.0"
+
 crossbeam-utils = "0.8.7"
+crossbeam-deque = "0.8.2"
+
 
 [[bench]]
 name = "bench_main"
