@@ -27,7 +27,7 @@ pub(crate) fn start() {
         history = history_file_name,
     );
 
-    let mut editor = Editor::<()>::new();
+    let mut editor = Editor::<()>::new().unwrap();
     let history_path = format!("{}/{}", env::var("HOME").unwrap(), history_file_name);
     if editor.load_history(&history_path).is_err() {}
     let env= Rc::new(RefCell::new(Env::new()));
