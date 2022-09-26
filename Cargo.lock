@@ -199,14 +199,12 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.0"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec91540d98355f690a86367e566ecad2e9e579f230230eb7c21398372be73ea5"
+checksum = "51887d4adc7b564537b15adcfb307936f8075dfcd5f00dde9a9f1d29383682bc"
 dependencies = [
- "autocfg",
  "cfg-if 1.0.0",
- "const_fn",
- "lazy_static",
+ "once_cell",
 ]
 
 [[package]]
@@ -721,6 +719,7 @@ name = "tay"
 version = "0.2.0"
 dependencies = [
  "criterion",
+ "crossbeam-utils",
  "pretty_assertions",
 ]
 
